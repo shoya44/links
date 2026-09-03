@@ -675,14 +675,18 @@
       const startScrollTop=editMode.scrollTop;
       let currentIndex=draggedIndex;
       let lastClientY=startClientY;
+      let pendingClientY=startClientY;
+      let dragActive=true;
       let rafId=null;
 
       try{handleEl.setPointerCapture(pointerId)}catch(err){}
 
       li.classList.add('dragging');
-      li.style.transition='transform .15s '+DRAG_EASE;
+      // ドラッグ中はtransitionを一切使わない。指の動きに追従させるにはtransformを
+      // 毎フレーム即時反映する必要があり、transitionを併用すると次々届く更新が
+      // アニメーションと競合して見た目がほぼ動かなくなる（実機検証で確認済み）
+      li.style.transition='none';
       li.style.transform='translateY(0px) scale(1.03)';
-      setTimeout(()=>{li.style.transition='none'},150);
 
       function applyShifts(newIndex){
         allRows.forEach((row,i)=>{
@@ -695,10 +699,14 @@
         });
       }
 
-      function updatePosition(clientY){
-        lastClientY=clientY;
+      // pointermoveは最新の指の位置を記録するだけに留め、実際のtransform反映は
+      // 描画フレームごとに1回（rAFループ側）で行う。こうすることで、イベント発火
+      // 頻度と描画頻度を切り離し、iOS Safariでも取りこぼしなく追従させる。
+      function applyFrame(){
+        if(!dragActive)return;
+        lastClientY=pendingClientY;
         const scrollDelta=editMode.scrollTop-startScrollTop;
-        const dy=(clientY-startClientY)+scrollDelta;
+        const dy=(pendingClientY-startClientY)+scrollDelta;
         li.style.transform='translateY('+dy+'px) scale(1.03)';
         const slotsMoved=Math.round(dy/rowHeight);
         const newIndex=Math.max(0,Math.min(allRows.length-1,draggedIndex+slotsMoved));
@@ -706,26 +714,19 @@
           currentIndex=newIndex;
           applyShifts(currentIndex);
         }
-      }
 
-      function autoScrollTick(){
-        if(!dragActive)return;
         const rect=editMode.getBoundingClientRect();
-        let dy=0;
-        if(lastClientY<rect.top+DRAG_SCROLL_EDGE)dy=-Math.ceil((rect.top+DRAG_SCROLL_EDGE-lastClientY)/4);
-        else if(lastClientY>rect.bottom-DRAG_SCROLL_EDGE)dy=Math.ceil((lastClientY-(rect.bottom-DRAG_SCROLL_EDGE))/4);
-        if(dy!==0){
-          editMode.scrollTop+=dy;
-          updatePosition(lastClientY);
-        }
-        rafId=requestAnimationFrame(autoScrollTick);
-      }
+        let sdy=0;
+        if(lastClientY<rect.top+DRAG_SCROLL_EDGE)sdy=-Math.ceil((rect.top+DRAG_SCROLL_EDGE-lastClientY)/4);
+        else if(lastClientY>rect.bottom-DRAG_SCROLL_EDGE)sdy=Math.ceil((lastClientY-(rect.bottom-DRAG_SCROLL_EDGE))/4);
+        if(sdy!==0)editMode.scrollTop+=sdy;
 
-      let dragActive=true;
+        rafId=requestAnimationFrame(applyFrame);
+      }
 
       function onMove(ev){
         if(ev.pointerId!==pointerId)return;
-        updatePosition(ev.clientY);
+        pendingClientY=ev.clientY;
       }
       function onUp(ev){
         if(ev.pointerId!==pointerId)return;
@@ -780,7 +781,7 @@
       handleEl.addEventListener('pointermove',onMove);
       handleEl.addEventListener('pointerup',onUp);
       handleEl.addEventListener('pointercancel',onUp);
-      rafId=requestAnimationFrame(autoScrollTick);
+      rafId=requestAnimationFrame(applyFrame);
     }
 
     // ===== SVGアイコンピッカー =====
