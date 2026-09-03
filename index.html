@@ -506,9 +506,16 @@
     }
 
     // ===== 編集モードのレンダリング =====
+    // 編集モードに入る時だけ呼ぶ。保存済みのlinksから作業用コピーを作り直す。
     function renderEditMode(){
-      editList.innerHTML='';
       editModeItems=links.map(l=>({...l}));
+      rerenderEditList();
+    }
+
+    // 編集中（削除・追加など）の再描画に使う。editModeItemsはlinksから
+    // 作り直さず、現在の内容をそのままDOMに反映するだけ。
+    function rerenderEditList(){
+      editList.innerHTML='';
       const wasEmpty=editModeItems.length===0;
       if(wasEmpty){
         editModeItems.push({
@@ -590,8 +597,10 @@
       });
 
       li.querySelector('.delete-btn').addEventListener('click',()=>{
-        editModeItems.splice(index,1);
-        renderEditMode()
+        // indexは行作成時点のものなので、並び替え後もずれないようitemの現在位置を引き直す
+        const i=editModeItems.indexOf(item);
+        if(i!==-1)editModeItems.splice(i,1);
+        rerenderEditList()
       });
 
       editList.appendChild(li)
