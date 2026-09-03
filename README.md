@@ -147,7 +147,7 @@ UX上の意図：
 
 注意：
 
-· アイコン画像（apple-touch-icon.png, icon-192.png, icon-512.png）はユーザーが用意する
+· アイコン画像: apple-touch-icon.png, icon-192.png, icon-512.png
 · 画像を差し替える場合は、同じファイル名でルートに配置すれば自動的に反映される
 · Service Workerのキャッシュバージョン（CACHE_NAME）は、ファイルを更新するたびに変更すること（例：v4 → v5）
 
