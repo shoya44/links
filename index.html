@@ -82,6 +82,7 @@
       color:var(--accent);
       font-size:15px;font-weight:500;font-family:var(--font);
       padding:8px 12px;border-radius:var(--radius-sm);
+      min-height:44px;
       cursor:pointer;transition:opacity .2s
     }
     .header-btn:active{opacity:.5}
@@ -146,7 +147,7 @@
       padding:8px;
       flex-shrink:0;
       display:flex;align-items:center;justify-content:center;
-      min-width:36px;min-height:36px;
+      min-width:44px;min-height:44px;
       border-radius:var(--radius-sm);
       transition:background-color .2s;
       touch-action:none
@@ -161,7 +162,7 @@
       fill:none;stroke-linecap:round;stroke-linejoin:round
     }
     .edit-icon{
-      width:36px;height:36px;border-radius:8px;
+      width:44px;height:44px;border-radius:8px;
       background:var(--bg-tertiary);
       display:flex;align-items:center;justify-content:center;
       flex-shrink:0;overflow:hidden;cursor:pointer;
@@ -190,7 +191,7 @@
       cursor:pointer;padding:8px;flex-shrink:0;
       border-radius:var(--radius-sm);transition:background-color .2s;
       display:flex;align-items:center;justify-content:center;
-      min-width:36px;min-height:36px
+      min-width:44px;min-height:44px
     }
     .delete-btn:active{background-color:rgba(255,69,58,.15)}
     .delete-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
@@ -244,7 +245,8 @@
       color:#fff
     }
     .icon-modal-close{
-      width:100%;padding:10px;border:none;
+      width:100%;min-height:44px;padding:10px;border:none;
+      display:flex;align-items:center;justify-content:center;
       background:var(--bg-tertiary);color:var(--text-secondary);
       font-family:var(--font);font-size:14px;font-weight:500;
       border-radius:var(--radius-sm);cursor:pointer;
@@ -409,6 +411,14 @@
     }
     function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
     function isValidUrl(s){try{new URL(s);return true}catch{return false}}
+    function normalizeUrlInput(v){
+      v=(v||'').trim();
+      if(v&&!v.match(/^https?:\/\//))v='https://'+v;
+      return v
+    }
+    function defaultTitleFromUrl(url){
+      try{return new URL(url).hostname.replace(/^www\./,'')}catch{return url}
+    }
     function haptic(){if(navigator.vibrate)navigator.vibrate(10)}
     function isGoogleUrl(url){
       return url.includes('google.com')||url.includes('google.co.jp')||url.includes('accounts.google')
@@ -509,9 +519,21 @@
     function renderEditMode(){
       editList.innerHTML='';
       editModeItems=links.map(l=>({...l}));
-      if(editModeItems.length===0)addEditRow();
+      const wasEmpty=editModeItems.length===0;
+      if(wasEmpty){
+        editModeItems.push({
+          id:generateId(),url:'',title:'',icon:'link',order:0,
+          createdAt:Date.now(),updatedAt:Date.now()
+        });
+      }
       editModeItems.forEach((item,i)=>appendEditRow(item,i));
-      initSortable()
+      initSortable();
+      if(wasEmpty){
+        requestAnimationFrame(()=>{
+          const input=editList.querySelector('.input-title');
+          if(input)input.focus()
+        });
+      }
     }
 
     function appendEditRow(item,index){
@@ -544,13 +566,25 @@
         urlInput.classList.remove('invalid');
       });
       urlInput.addEventListener('blur',()=>{
-        let v=urlInput.value.trim();
-        if(v&&!v.match(/^https?:\/\//)){
-          v='https://'+v;
+        if(urlInput.value.trim()){
+          const v=normalizeUrlInput(urlInput.value);
           urlInput.value=v;
           item.url=v;
         }
         // 自動ファビコン取得は行わない（デフォルトはSVGアイコンのまま）
+      });
+      // 複数行のURLをまとめてペーストした場合、1行目は現在の行に、
+      // 2行目以降はそれぞれ新しい行として追加する
+      urlInput.addEventListener('paste',(e)=>{
+        const text=(e.clipboardData||window.clipboardData).getData('text');
+        const lines=text.split(/[\r\n]+/).map(s=>s.trim()).filter(Boolean);
+        if(lines.length<=1)return;
+        e.preventDefault();
+        const firstUrl=normalizeUrlInput(lines[0]);
+        urlInput.value=firstUrl;
+        item.url=firstUrl;
+        urlInput.classList.remove('invalid');
+        lines.slice(1).forEach(u=>addEditRow(normalizeUrlInput(u)));
       });
 
       // アイコンクリック → SVGアイコンピッカー
@@ -581,9 +615,9 @@
       })
     }
 
-    function addEditRow(){
+    function addEditRow(url){
       const newItem={
-        id:generateId(),url:'',title:'',icon:'link',order:editModeItems.length,
+        id:generateId(),url:url||'',title:'',icon:'link',order:editModeItems.length,
         createdAt:Date.now(),updatedAt:Date.now()
       };
       editModeItems.push(newItem);
@@ -600,6 +634,8 @@
 
     // ===== SortableJS =====
     function initSortable(){
+      // CDN読み込み失敗時にSortableが未定義でも、他の編集操作（追加・貼り付け等）を止めない
+      if(typeof Sortable==='undefined')return;
       if(sortableInstance)sortableInstance.destroy();
       sortableInstance=new Sortable(editList,{
         handle:'.drag-handle',
@@ -700,7 +736,11 @@
         return;
       }
       const validItems=editModeItems.filter(it=>isValidUrl(it.url));
-      validItems.forEach((it,i)=>{it.order=i;it.updatedAt=Date.now()});
+      validItems.forEach((it,i)=>{
+        it.order=i;
+        it.updatedAt=Date.now();
+        if(!it.title.trim())it.title=defaultTitleFromUrl(it.url);
+      });
       const ids=new Set(validItems.map(i=>i.id));
       for(const l of links){if(!ids.has(l.id))await deleteLink(l.id)}
       for(const it of validItems)await saveLink(it);
