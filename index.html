@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>リンク</title>
+  <link rel="manifest" href='data:application/manifest+json,{"name":"リンク","short_name":"リンク","start_url":".","display":"standalone","background_color":"%230a0a0f","theme_color":"%230a0a0f"}'>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <style>
+    :root{--bg-primary:#0a0a0f;--bg-secondary:#1c1c24;--bg-tertiary:#2c2c36;--text-primary:#f5f5f7;--text-secondary:#98989e;--text-tertiary:#6e6e76;--accent:#0a84ff;--danger:#ff453a;--separator:#2c2c36;--radius-sm:8px;--radius-md:12px;--radius-lg:16px;--font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue","Hiragino Kaku Gothic ProN","Hiragino Sans",sans-serif;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{height:100%;background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;user-select:none}
+    #app{display:flex;flex-direction:column;height:100%;max-width:600px;margin:0 auto;padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
+    .header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;flex-shrink:0}
+    .header-title{font-size:22px;font-weight:700;letter-spacing:-0.02em}
+    .header-btn{background:none;border:none;color:var(--accent);font-size:16px;font-weight:500;font-family:var(--font);padding:8px 12px;border-radius:var(--radius-sm);cursor:pointer;transition:opacity .2s}
+    .header-btn:active{opacity:.5}
+    .header-btn.primary{font-weight:600}
+    .mode{display:none;flex:1;overflow-y:auto;padding:0 16px 24px;-webkit-overflow-scrolling:touch}
+    .mode.active{display:flex;flex-direction:column}
+    .link-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+    .link-item{display:flex;align-items:center;gap:14px;background:var(--bg-secondary);border-radius:var(--radius-md);padding:14px 16px;min-height:60px;cursor:pointer;transition:transform .15s,background-color .15s}
+    .link-item:active{transform:scale(.98);background-color:var(--bg-tertiary)}
+    .link-icon{width:40px;height:40px;border-radius:10px;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+    .link-icon img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+    .link-icon .emoji{font-size:20px}
+    .link-title{flex:1;font-size:16px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .link-arrow{color:var(--text-tertiary);font-size:14px;flex-shrink:0}
+    .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--text-tertiary);gap:12px;padding:40px 0}
+    .empty-icon{font-size:48px}.empty-text{font-size:15px}
+    .edit-header{display:flex;align-items:center;justify-content:space-between;padding:16px 0 12px;flex-shrink:0}
+    .edit-list{gap:12px}
+    .edit-item{display:flex;flex-direction:column;background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px 16px;gap:8px;transition:opacity .2s}
+    .edit-item .row-top{display:flex;align-items:center;gap:12px}
+    .drag-handle{cursor:grab;color:var(--text-tertiary);font-size:18px;padding:4px;flex-shrink:0}
+    .drag-handle:active{cursor:grabbing}
+    .edit-icon{width:36px;height:36px;border-radius:8px;background:var(--bg-tertiary);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+    .edit-icon img{width:100%;height:100%;object-fit:cover}
+    .edit-icon .emoji{font-size:18px}
+    .edit-item input{background:transparent;border:none;color:var(--text-primary);font-family:var(--font);font-size:15px;outline:none;flex:1;min-width:0;padding:4px 0;border-bottom:1px solid var(--separator);transition:border-color .2s}
+    .edit-item input:focus{border-bottom-color:var(--accent)}
+    .edit-item input::placeholder{color:var(--text-tertiary)}
+    .edit-item input.input-url{font-size:13px;color:var(--text-secondary)}
+    .delete-btn{background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:4px 8px;flex-shrink:0;border-radius:var(--radius-sm);transition:background-color .2s}
+    .delete-btn:active{background-color:rgba(255,69,58,.15)}
+    .add-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--bg-secondary);border:1px dashed var(--separator);color:var(--text-secondary);font-family:var(--font);font-size:15px;font-weight:500;padding:16px;border-radius:var(--radius-md);cursor:pointer;margin-top:12px;transition:background-color .2s,color .2s}
+    .add-btn:active{background:var(--bg-tertiary);color:var(--text-primary)}
+    @keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .link-item,.edit-item{animation:fadeInUp .25s ease both}
+    .sortable-ghost{opacity:.4;background:var(--bg-tertiary)}
+    .sortable-chosen{background:var(--bg-tertiary)}
+    .sortable-drag{opacity:1!important;background:var(--bg-tertiary);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <div class="header-title">リンク</div>
+      <button id="editBtn" class="header-btn">編集</button>
+    </header>
+    <main id="normalMode" class="mode active">
+      <ul id="linkList" class="link-list"></ul>
+    </main>
+    <main id="editMode" class="mode">
+      <div class="edit-header">
+        <button id="cancelBtn" class="header-btn">キャンセル</button>
+        <div class="header-title">編集</div>
+        <button id="saveBtn" class="header-btn primary">保存</button>
+      </div>
+      <ul id="editList" class="link-list edit-list"></ul>
+      <button id="addBtn" class="add-btn">＋ 追加する</button>
+    </main>
+  </div>
+  <script>
+    const DB_NAME='link-launcher',DB_VERSION=1,STORE_NAME='links';let db,links=[],editModeItems=[],isEditMode=false,sortableInstance=null;
+    function openDB(){return new Promise((res,rej)=>{const req=indexedDB.open(DB_NAME,DB_VERSION);req.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(STORE_NAME)){const s=d.createObjectStore(STORE_NAME,{keyPath:'id'});s.createIndex('url','url',{unique:true});s.createIndex('order','order')}};req.onsuccess=()=>{db=req.result;res(db)};req.onerror=()=>rej(req.error)})}
+    function getAllLinks(){return new Promise((res,rej)=>{const tx=db.transaction(STORE_NAME,'readonly'),st=tx.objectStore(STORE_NAME),req=st.getAll();req.onsuccess=()=>{const l=req.result||[];l.sort((a,b)=>a.order-b.order);res(l)};req.onerror=()=>rej(req.error)})}
+    function saveLink(link){return new Promise((res,rej)=>{const tx=db.transaction(STORE_NAME,'readwrite'),st=tx.objectStore(STORE_NAME);st.put(link);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+    function deleteLink(id){return new Promise((res,rej)=>{const tx=db.transaction(STORE_NAME,'readwrite'),st=tx.objectStore(STORE_NAME);st.delete(id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+    function generateId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+    function getFaviconUrl(url){try{return 'https://www.google.com/s2/favicons?domain='+new URL(url).hostname+'&sz=64'}catch{return ''}}
+    function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+    function isValidUrl(s){try{new URL(s);return true}catch{return false}}
+    function haptic(){if(navigator.vibrate)navigator.vibrate(10)}
+    const normalMode=document.getElementById('normalMode'),editMode=document.getElementById('editMode'),linkList=document.getElementById('linkList'),editList=document.getElementById('editList'),editBtn=document.getElementById('editBtn'),cancelBtn=document.getElementById('cancelBtn'),saveBtn=document.getElementById('saveBtn'),addBtn=document.getElementById('addBtn');
+    function renderNormalMode(){linkList.innerHTML='';if(links.length===0){linkList.innerHTML='<div class="empty-state"><div class="empty-icon">🔗</div><div class="empty-text">リンクがありません</div><div class="empty-text" style="font-size:13px;">編集ボタンから追加してください</div></div>';return}links.forEach((link,i)=>{const li=document.createElement('li');li.className='link-item';li.style.animationDelay=(i*0.03)+'s';li.innerHTML='<div class="link-icon">'+(link.icon?'<img src="'+link.icon+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">':'')+'<span class="emoji" style="'+(link.icon?'display:none;':'')+'">🌐</span></div><span class="link-title">'+escapeHtml(link.title||link.url)+'</span><span class="link-arrow">↗</span>';li.addEventListener('click',()=>{haptic();window.open(link.url,'_blank','noopener')});linkList.appendChild(li)})}
+    function openLink(link){window.open(link.url,'_blank','noopener')}
+    function renderEditMode(){editList.innerHTML='';editModeItems=links.map(l=>({...l}));if(editModeItems.length===0)addEditRow();editModeItems.forEach((item,i)=>appendEditRow(item,i));initSortable()}
+    function appendEditRow(item,index){const li=document.createElement('li');li.className='edit-item';li.style.animationDelay=(index*0.03)+'s';li.dataset.id=item.id;li.innerHTML='<div class="row-top"><span class="drag-handle">⠿</span><div class="edit-icon">'+(item.icon?'<img src="'+item.icon+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">':'')+'<span class="emoji" style="'+(item.icon?'display:none;':'')+'">🌐</span></div><input type="text" class="input-title" placeholder="タイトル" value="'+escapeHtml(item.title||'')+'"><button class="delete-btn">✕</button></div><input type="url" class="input-url" placeholder="URL（https://...）" value="'+escapeHtml(item.url||'')+'">';const titleInput=li.querySelector('.input-title');titleInput.addEventListener('input',()=>{item.title=titleInput.value});const urlInput=li.querySelector('.input-url');urlInput.addEventListener('input',()=>{item.url=urlInput.value;if(isValidUrl(item.url)){const fav=getFaviconUrl(item.url);item.icon=fav;const iconDiv=li.querySelector('.edit-icon');iconDiv.innerHTML='<img src="'+fav+'" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';"><span class="emoji" style="display:none;">🌐</span>'}else{item.icon='';const iconDiv=li.querySelector('.edit-icon');iconDiv.innerHTML='<span class="emoji">🌐</span>'}});urlInput.addEventListener('blur',()=>{let v=urlInput.value.trim();if(v&&!v.match(/^https?:\/\//)){v='https://'+v;urlInput.value=v;item.url=v}});li.querySelector('.delete-btn').addEventListener('click',()=>{editModeItems.splice(index,1);renderEditMode()});editList.appendChild(li)}
+    function addEditRow(){const newItem={id:generateId(),url:'',title:'',icon:'',order:editModeItems.length,createdAt:Date.now(),updatedAt:Date.now()};editModeItems.push(newItem);appendEditRow(newItem,editModeItems.length-1);requestAnimationFrame(()=>{const rows=editList.querySelectorAll('.edit-item');if(rows.length){const input=rows[rows.length-1].querySelector('.input-title');if(input)input.focus()}});initSortable()}
+    function initSortable(){if(sortableInstance)sortableInstance.destroy();sortableInstance=new Sortable(editList,{handle:'.drag-handle',animation:200,ghostClass:'sortable-ghost',chosenClass:'sortable-chosen',dragClass:'sortable-drag',delay:100,delayOnTouchOnly:true,touchStartThreshold:3,onEnd:evt=>{const {oldIndex,newIndex}=evt;if(oldIndex===newIndex)return;const [moved]=editModeItems.splice(oldIndex,1);editModeItems.splice(newIndex,0,moved);editModeItems.forEach((it,i)=>it.order=i)}})}
+    function showNormalMode(){isEditMode=false;normalMode.classList.add('active');editMode.classList.remove('active');editBtn.textContent='編集';renderNormalMode()}
+    function showEditMode(){isEditMode=true;normalMode.classList.remove('active');editMode.classList.add('active');editBtn.textContent='完了';renderEditMode()}
+    async function saveAll(){const validItems=editModeItems.filter(it=>isValidUrl(it.url));validItems.forEach((it,i)=>{it.order=i;it.updatedAt=Date.now()});const ids=new Set(validItems.map(i=>i.id));for(const l of links){if(!ids.has(l.id))await deleteLink(l.id)}for(const it of validItems)await saveLink(it);links=validItems;showNormalMode()}
+    editBtn.addEventListener('click',()=>{if(isEditMode)saveAll();else showEditMode()});
+    cancelBtn.addEventListener('click',showNormalMode);
+    saveBtn.addEventListener('click',saveAll);
+    addBtn.addEventListener('click',addEditRow);
+    (async()=>{await openDB();links=await getAllLinks();renderNormalMode();if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').then(()=>console.log('SW registered')).catch(e=>console.log('SW failed',e)))}})();
+  </script>
+</body>
+</html>
