@@ -1,7 +1,8 @@
-const CACHE_NAME = 'link-launcher-v1';
+const CACHE_NAME = 'link-launcher-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
+  './manifest.json',
   'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js'
 ];
 
