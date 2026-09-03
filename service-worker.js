@@ -1,4 +1,4 @@
-const CACHE_NAME = 'link-launcher-v2';
+const CACHE_NAME = 'link-launcher-v3';
 const STATIC_ASSETS = [
   './',
   './index.html',
