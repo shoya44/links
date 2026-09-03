@@ -62,11 +62,19 @@
     /* ヘッダー */
     .header{
       display:flex;align-items:center;justify-content:space-between;
-      padding:16px 20px 12px;flex-shrink:0
+      padding:16px 20px 12px;flex-shrink:0;
+      min-height:56px
     }
-    .header-title{
-      font-size:22px;font-weight:700;letter-spacing:-0.02em;
-      text-transform:lowercase
+    .header-logo{
+      width:28px;height:28px;
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0
+    }
+    .header-logo svg{
+      width:100%;height:100%;
+      stroke:var(--text-primary);
+      stroke-width:2;fill:none;
+      stroke-linecap:round;stroke-linejoin:round
     }
     .header-btn{
       display:flex;align-items:center;gap:6px;
@@ -98,7 +106,12 @@
       width:40px;height:40px;border-radius:10px;
       background:var(--bg-tertiary);
       display:flex;align-items:center;justify-content:center;
-      flex-shrink:0;overflow:hidden;font-size:20px
+      flex-shrink:0;overflow:hidden
+    }
+    .link-icon svg{
+      width:20px;height:20px;
+      stroke:var(--text-primary);stroke-width:2;
+      fill:none;stroke-linecap:round;stroke-linejoin:round
     }
     .link-icon img{width:100%;height:100%;object-fit:cover;border-radius:10px}
     .link-title{
@@ -116,7 +129,8 @@
     /* 編集モード */
     .edit-header{
       display:flex;align-items:center;justify-content:space-between;
-      padding:16px 0 12px;flex-shrink:0
+      padding:0 0 12px;flex-shrink:0;
+      min-height:56px
     }
     .edit-list{gap:12px}
     .edit-item{
@@ -126,19 +140,37 @@
     }
     .edit-item .row-top{display:flex;align-items:center;gap:12px}
     .drag-handle{
-      cursor:grab;color:var(--text-tertiary);
-      font-size:18px;padding:4px;flex-shrink:0
+      cursor:grab;
+      color:var(--text-tertiary);
+      padding:8px;
+      flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      min-width:36px;min-height:36px;
+      border-radius:var(--radius-sm);
+      transition:background-color .2s
     }
-    .drag-handle:active{cursor:grabbing}
-    .drag-handle svg{width:18px;height:18px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+    .drag-handle:active{
+      cursor:grabbing;
+      background:var(--bg-tertiary)
+    }
+    .drag-handle svg{
+      width:20px;height:20px;
+      stroke:currentColor;stroke-width:2;
+      fill:none;stroke-linecap:round;stroke-linejoin:round
+    }
     .edit-icon{
       width:36px;height:36px;border-radius:8px;
       background:var(--bg-tertiary);
       display:flex;align-items:center;justify-content:center;
       flex-shrink:0;overflow:hidden;cursor:pointer;
-      font-size:18px;transition:opacity .2s
+      transition:opacity .2s
     }
     .edit-icon:active{opacity:.7}
+    .edit-icon svg{
+      width:18px;height:18px;
+      stroke:var(--text-primary);stroke-width:2;
+      fill:none;stroke-linecap:round;stroke-linejoin:round
+    }
     .edit-icon img{width:100%;height:100%;object-fit:cover}
     .edit-item input{
       background:transparent;border:none;
@@ -152,8 +184,10 @@
     .edit-item input.input-url{font-size:13px;color:var(--text-secondary)}
     .delete-btn{
       background:none;border:none;color:var(--danger);
-      cursor:pointer;padding:4px 8px;flex-shrink:0;
-      border-radius:var(--radius-sm);transition:background-color .2s
+      cursor:pointer;padding:8px;flex-shrink:0;
+      border-radius:var(--radius-sm);transition:background-color .2s;
+      display:flex;align-items:center;justify-content:center;
+      min-width:36px;min-height:36px
     }
     .delete-btn:active{background-color:rgba(255,69,58,.15)}
     .delete-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
@@ -167,42 +201,53 @@
     }
     .add-btn:active{background:var(--bg-tertiary);color:var(--text-primary)}
     .add-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
-    /* 絵文字ピッカーモーダル */
-    .emoji-modal-overlay{
+    /* アイコンピッカーモーダル */
+    .icon-modal-overlay{
       position:fixed;top:0;left:0;right:0;bottom:0;
       background:rgba(0,0,0,.6);z-index:100;
       display:flex;align-items:center;justify-content:center;
       animation:fadeIn .2s ease
     }
-    .emoji-modal{
+    .icon-modal{
       background:var(--bg-secondary);
       border-radius:var(--radius-lg);
-      padding:20px;width:320px;max-width:90vw;
-      box-shadow:0 8px 32px rgba(0,0,0,.5)
+      padding:20px;width:340px;max-width:90vw;
+      box-shadow:0 8px 32px rgba(0,0,0,.5);
+      max-height:80vh;overflow-y:auto
     }
-    .emoji-modal-title{
+    .icon-modal-title{
       font-size:15px;font-weight:600;color:var(--text-primary);
       margin-bottom:16px;text-align:center
     }
-    .emoji-grid{
+    .icon-grid{
       display:grid;grid-template-columns:repeat(6,1fr);
       gap:8px;margin-bottom:16px
     }
-    .emoji-option{
-      width:44px;height:44px;border-radius:var(--radius-sm);
+    .icon-option{
+      width:48px;height:48px;border-radius:var(--radius-sm);
       background:var(--bg-tertiary);border:none;cursor:pointer;
-      font-size:24px;display:flex;align-items:center;justify-content:center;
-      transition:background-color .2s,transform .15s
+      display:flex;align-items:center;justify-content:center;
+      transition:background-color .2s,transform .15s;
+      color:var(--text-primary)
     }
-    .emoji-option:active{background:var(--separator);transform:scale(.9)}
-    .emoji-modal-close{
+    .icon-option:active{background:var(--separator);transform:scale(.9)}
+    .icon-option svg{
+      width:22px;height:22px;
+      stroke:currentColor;stroke-width:2;
+      fill:none;stroke-linecap:round;stroke-linejoin:round
+    }
+    .icon-option.selected{
+      background:var(--accent);
+      color:#fff
+    }
+    .icon-modal-close{
       width:100%;padding:10px;border:none;
       background:var(--bg-tertiary);color:var(--text-secondary);
       font-family:var(--font);font-size:14px;font-weight:500;
       border-radius:var(--radius-sm);cursor:pointer;
       transition:background-color .2s
     }
-    .emoji-modal-close:active{background:var(--separator)}
+    .icon-modal-close:active{background:var(--separator)}
     /* アニメーション */
     @keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -210,26 +255,43 @@
     /* SortableJS */
     .sortable-ghost{opacity:.4;background:var(--bg-tertiary)}
     .sortable-chosen{background:var(--bg-tertiary)}
-    .sortable-drag{opacity:1!important;background:var(--bg-tertiary);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    .sortable-drag{
+      opacity:1!important;
+      background:var(--bg-tertiary);
+      box-shadow:0 8px 24px rgba(0,0,0,.4);
+      border-radius:var(--radius-md)
+    }
   </style>
 </head>
 <body>
   <div id="app">
     <!-- 通常モードヘッダー -->
     <header class="header" id="normalHeader">
-      <div class="header-title">links</div>
+      <div class="header-logo" aria-label="links">
+        <!-- リンク型ロゴ -->
+        <svg viewBox="0 0 24 24">
+          <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+        </svg>
+      </div>
       <button id="editBtn" class="header-btn" aria-label="Edit">
         <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         Edit
       </button>
     </header>
+
     <!-- 編集モードヘッダー -->
     <header class="header" id="editHeader" style="display:none">
       <button id="cancelBtn" class="header-btn" aria-label="Cancel">
         <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
         Cancel
       </button>
-      <div class="header-title">Edit</div>
+      <div class="header-logo" aria-label="links">
+        <svg viewBox="0 0 24 24">
+          <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+        </svg>
+      </div>
       <button id="saveBtn" class="header-btn primary" aria-label="Save">
         <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
         Save
@@ -251,23 +313,50 @@
     </main>
   </div>
 
-  <!-- 絵文字ピッカーモーダル -->
-  <div id="emojiModal" class="emoji-modal-overlay" style="display:none">
-    <div class="emoji-modal">
-      <div class="emoji-modal-title">アイコンを選択</div>
-      <div class="emoji-grid" id="emojiGrid"></div>
-      <button class="emoji-modal-close" id="emojiClose">キャンセル</button>
+  <!-- アイコンピッカーモーダル -->
+  <div id="iconModal" class="icon-modal-overlay" style="display:none">
+    <div class="icon-modal">
+      <div class="icon-modal-title">アイコンを選択</div>
+      <div class="icon-grid" id="iconGrid"></div>
+      <button class="icon-modal-close" id="iconClose">キャンセル</button>
     </div>
   </div>
 
   <script>
-    // ===== 絵文字リスト =====
-    const EMOJIS = ['🔗','📊','📈','📋','📝','📅','💼','🏢','🗂','📁','✅','⏰','💰','🧾','📬','📎','✏️','🗓','📌','⚙️','🔒','🔑','📄','📑'];
+    // ===== SVGアイコン定義（Lucide/Feather風） =====
+    const SVG_ICONS = {
+      'link': '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
+      'file': '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
+      'table': '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>',
+      'calendar': '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+      'mail': '<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg>',
+      'chat': '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+      'settings': '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
+      'folder': '<svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>',
+      'chart': '<svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>',
+      'clock': '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+      'wallet': '<svg viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg>',
+      'cloud': '<svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>',
+      'book': '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
+      'briefcase': '<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>',
+      'home': '<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>',
+      'user': '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      'check': '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>',
+      'pen': '<svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+      'star': '<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>',
+      'heart': '<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
+      'bell': '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
+      'globe': '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>',
+      'download': '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
+      'code': '<svg viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>'
+    };
+    const ICON_NAMES = Object.keys(SVG_ICONS);
 
     // ===== IndexedDB =====
     const DB_NAME='link-launcher',DB_VERSION=1,STORE_NAME='links';
     let db,links=[],editModeItems=[],isEditMode=false,sortableInstance=null;
-    let emojiTargetItem=null; // 絵文字ピッカーの対象アイテム
+    let iconTargetItem=null;
+    let iconTargetRow=null;
 
     function openDB(){
       return new Promise((res,rej)=>{
@@ -319,15 +408,32 @@
     function isDocsUrl(url){return url.includes('docs.google.com/document')}
     function isSlidesUrl(url){return url.includes('docs.google.com/presentation')}
 
+    function getIconSvg(iconName){
+      if(!iconName)return null;
+      if(SVG_ICONS[iconName])return SVG_ICONS[iconName];
+      return null;
+    }
+
+    function renderIcon(link){
+      // SVGアイコン名が設定されている場合
+      if(link.icon && SVG_ICONS[link.icon]){
+        return SVG_ICONS[link.icon];
+      }
+      // ファビコンURLの場合
+      if(link.icon && (link.icon.startsWith('http')||link.icon.startsWith('data:'))){
+        return '<img src="'+link.icon+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.parentElement.innerHTML=\''+SVG_ICONS['link']+'\'">';
+      }
+      // デフォルト（リンクアイコン）
+      return SVG_ICONS['link'];
+    }
+
     // ===== リンクを開く =====
     function openLink(link){
       const url=link.url;
       haptic();
-      // Googleスプレッドシート → アプリで開く
       if(isSheetsUrl(url)){
         const appUrl=url.replace('https://','googlesheets://');
         window.location.href=appUrl;
-        // フォールバック:1.5秒後にブラウザで開く
         setTimeout(()=>{
           if(document.visibilityState==='visible'){
             window.open(url,'_blank','noopener')
@@ -335,7 +441,6 @@
         },1500);
         return
       }
-      // Googleドキュメント → アプリで開く
       if(isDocsUrl(url)){
         const appUrl=url.replace('https://','googledocs://');
         window.location.href=appUrl;
@@ -346,7 +451,6 @@
         },1500);
         return
       }
-      // Googleスライド → アプリで開く
       if(isSlidesUrl(url)){
         const appUrl=url.replace('https://','googleslides://');
         window.location.href=appUrl;
@@ -357,13 +461,11 @@
         },1500);
         return
       }
-      // その他のGoogle URL → アカウント選択画面を経由
       if(isGoogleUrl(url)){
         const chooserUrl='https://accounts.google.com/AccountChooser?continue='+encodeURIComponent(url)+'&hl=ja';
         window.open(chooserUrl,'_blank','noopener');
         return
       }
-      // 通常のリンク
       window.open(url,'_blank','noopener')
     }
 
@@ -378,9 +480,9 @@
     const addBtn=document.getElementById('addBtn');
     const normalHeader=document.getElementById('normalHeader');
     const editHeader=document.getElementById('editHeader');
-    const emojiModal=document.getElementById('emojiModal');
-    const emojiGrid=document.getElementById('emojiGrid');
-    const emojiClose=document.getElementById('emojiClose');
+    const iconModal=document.getElementById('iconModal');
+    const iconGrid=document.getElementById('iconGrid');
+    const iconClose=document.getElementById('iconClose');
 
     // ===== 通常モードのレンダリング =====
     function renderNormalMode(){
@@ -393,11 +495,7 @@
         const li=document.createElement('li');
         li.className='link-item';
         li.style.animationDelay=(i*0.03)+'s';
-        const iconHtml=link.icon
-          ?(link.icon.startsWith('http')||link.icon.startsWith('data:')
-            ?'<img src="'+link.icon+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.parentElement.textContent=\'🌐\'">'
-            :link.icon)
-          :'🌐';
+        const iconHtml=renderIcon(link);
         li.innerHTML='<div class="link-icon">'+iconHtml+'</div><span class="link-title">'+escapeHtml(link.title||link.url)+'</span><span class="link-arrow">↗</span>';
         li.addEventListener('click',()=>openLink(link));
         linkList.appendChild(li)
@@ -419,16 +517,12 @@
       li.style.animationDelay=(index*0.03)+'s';
       li.dataset.id=item.id;
 
-      const iconHtml=item.icon
-        ?(item.icon.startsWith('http')||item.icon.startsWith('data:')
-          ?'<img src="'+item.icon+'" onerror="this.style.display=\'none\';this.parentElement.textContent=\'🌐\'">'
-          :item.icon)
-        :'🌐';
+      const iconHtml=renderIcon(item);
 
       li.innerHTML=
         '<div class="row-top">'+
           '<span class="drag-handle" aria-label="Drag to reorder">'+
-            '<svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1" fill="currentColor"/><circle cx="15" cy="6" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="18" r="1" fill="currentColor"/><circle cx="15" cy="18" r="1" fill="currentColor"/></svg>'+
+            '<svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5" fill="currentColor"/><circle cx="15" cy="6" r="1.5" fill="currentColor"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="18" r="1.5" fill="currentColor"/><circle cx="15" cy="18" r="1.5" fill="currentColor"/></svg>'+
           '</span>'+
           '<div class="edit-icon" data-index="'+index+'">'+iconHtml+'</div>'+
           '<input type="text" class="input-title" placeholder="Title" value="'+escapeHtml(item.title||'')+'" aria-label="Title">'+
@@ -438,15 +532,13 @@
         '</div>'+
         '<input type="url" class="input-url" placeholder="https://example.com" value="'+escapeHtml(item.url||'')+'" aria-label="URL">';
 
-      // タイトル入力
       const titleInput=li.querySelector('.input-title');
       titleInput.addEventListener('input',()=>{item.title=titleInput.value});
 
-      // URL入力
       const urlInput=li.querySelector('.input-url');
       urlInput.addEventListener('input',()=>{
         item.url=urlInput.value;
-        updateEditIcon(li,item)
+        // URLが変わってもアイコンは自動変更しない（ユーザーが手動で設定）
       });
       urlInput.addEventListener('blur',()=>{
         let v=urlInput.value.trim();
@@ -454,18 +546,26 @@
           v='https://'+v;
           urlInput.value=v;
           item.url=v;
-          updateEditIcon(li,item)
+        }
+        // URLから自動でファビコンを取得するのは、ユーザーがアイコンを明示的に設定していない場合のみ
+        if(!item.icon || item.icon==='link'){
+          const fav=getFaviconUrl(item.url);
+          if(fav){
+            item.icon=fav;
+            updateEditIconDisplay(li,item)
+          }
         }
       });
 
-      // アイコンクリック → 絵文字ピッカー
+      // アイコンクリック → SVGアイコンピッカー
       const iconDiv=li.querySelector('.edit-icon');
-      iconDiv.addEventListener('click',()=>{
-        emojiTargetItem=item;
-        showEmojiModal()
+      iconDiv.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        iconTargetItem=item;
+        iconTargetRow=li;
+        showIconModal()
       });
 
-      // 削除ボタン
       li.querySelector('.delete-btn').addEventListener('click',()=>{
         editModeItems.splice(index,1);
         renderEditMode()
@@ -474,21 +574,21 @@
       editList.appendChild(li)
     }
 
-    function updateEditIcon(li,item){
+    function updateEditIconDisplay(li,item){
       const iconDiv=li.querySelector('.edit-icon');
-      if(isValidUrl(item.url)&&!item.icon){
-        const fav=getFaviconUrl(item.url);
-        item.icon=fav;
-        iconDiv.innerHTML='<img src="'+fav+'" onerror="this.style.display=\'none\';this.parentElement.textContent=\'🌐\'">'
-      }else if(!item.url){
-        item.icon='';
-        iconDiv.textContent='🌐'
-      }
+      iconDiv.innerHTML=renderIcon(item);
+      // イベントリスナーを再設定
+      iconDiv.addEventListener('click',(e)=>{
+        e.stopPropagation();
+        iconTargetItem=item;
+        iconTargetRow=li;
+        showIconModal()
+      })
     }
 
     function addEditRow(){
       const newItem={
-        id:generateId(),url:'',title:'',icon:'',order:editModeItems.length,
+        id:generateId(),url:'',title:'',icon:'link',order:editModeItems.length,
         createdAt:Date.now(),updatedAt:Date.now()
       };
       editModeItems.push(newItem);
@@ -507,9 +607,14 @@
     function initSortable(){
       if(sortableInstance)sortableInstance.destroy();
       sortableInstance=new Sortable(editList,{
-        handle:'.drag-handle',animation:200,
-        ghostClass:'sortable-ghost',chosenClass:'sortable-chosen',dragClass:'sortable-drag',
-        delay:100,delayOnTouchOnly:true,touchStartThreshold:3,
+        handle:'.drag-handle',
+        animation:200,
+        forceFallback:true,       // モバイルで確実に動作させる
+        fallbackTolerance:0,      // フォールバック時の判定を敏感に
+        swapThreshold:0.5,        // スワップの閾値
+        ghostClass:'sortable-ghost',
+        chosenClass:'sortable-chosen',
+        dragClass:'sortable-drag',
         onEnd:evt=>{
           const {oldIndex,newIndex}=evt;
           if(oldIndex===newIndex)return;
@@ -520,32 +625,40 @@
       })
     }
 
-    // ===== 絵文字ピッカー =====
-    function showEmojiModal(){
-      emojiGrid.innerHTML='';
-      EMOJIS.forEach(emoji=>{
+    // ===== SVGアイコンピッカー =====
+    function showIconModal(){
+      iconGrid.innerHTML='';
+      ICON_NAMES.forEach(name=>{
         const btn=document.createElement('button');
-        btn.className='emoji-option';
-        btn.textContent=emoji;
-        btn.setAttribute('aria-label','Select '+emoji);
+        btn.className='icon-option';
+        btn.innerHTML=SVG_ICONS[name];
+        btn.setAttribute('aria-label','Select '+name+' icon');
+        btn.dataset.iconName=name;
+        // 現在選択中のアイコンをハイライト
+        if(iconTargetItem && iconTargetItem.icon===name){
+          btn.classList.add('selected')
+        }
         btn.addEventListener('click',()=>{
-          if(emojiTargetItem){
-            emojiTargetItem.icon=emoji;
-            renderEditMode()
+          if(iconTargetItem){
+            iconTargetItem.icon=name;
+            if(iconTargetRow){
+              updateEditIconDisplay(iconTargetRow,iconTargetItem)
+            }
           }
-          hideEmojiModal()
+          hideIconModal()
         });
-        emojiGrid.appendChild(btn)
+        iconGrid.appendChild(btn)
       });
-      emojiModal.style.display='flex'
+      iconModal.style.display='flex'
     }
-    function hideEmojiModal(){
-      emojiModal.style.display='none';
-      emojiTargetItem=null
+    function hideIconModal(){
+      iconModal.style.display='none';
+      iconTargetItem=null;
+      iconTargetRow=null
     }
-    emojiClose.addEventListener('click',hideEmojiModal);
-    emojiModal.addEventListener('click',e=>{
-      if(e.target===emojiModal)hideEmojiModal()
+    iconClose.addEventListener('click',hideIconModal);
+    iconModal.addEventListener('click',e=>{
+      if(e.target===iconModal)hideIconModal()
     });
 
     // ===== モード切替 =====
@@ -581,7 +694,7 @@
     saveBtn.addEventListener('click',()=>saveAll());
     addBtn.addEventListener('click',()=>addEditRow());
 
-    // ===== ズーム防止（iOS Safari） =====
+    // ===== ズーム防止 =====
     document.addEventListener('gesturestart',e=>e.preventDefault());
     document.addEventListener('dblclick',e=>e.preventDefault());
 
