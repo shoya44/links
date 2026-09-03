@@ -17,7 +17,7 @@
 | フレームワーク | **なし（素のHTML/CSS/JS）** | シンプルさ最優先。ビルド工程を排除し、保守性を高めるため |
 | データ保存 | **IndexedDB** | 端末内に保存。外部DB不要。オフラインでも一覧表示可能 |
 | 静的ファイルキャッシュ | **Service Worker + Cache API** | PWAとしてオフライン起動を可能にするため |
-| ドラッグ＆ドロップ | **SortableJS**（CDN） | モバイルでも確実に動作する並び替えを実現するため |
+| ドラッグ＆ドロップ | **自前実装（Pointer Events）** | 汎用ライブラリのネイティブDnDフォールバックはiOS Safariで「浮く」演出が反映されにくいため、長押し〜追従〜ドロップの各フレームを自前で制御し、外部依存も減らすため |
 | ホスティング | **GitHub Pages** | 無料。静的ファイルのみで十分なため |
 | アイコン | **内蔵SVG（Lucide/Feather風）** | 洗練された見た目と、外部依存なしで表示できるため |
 
@@ -91,32 +91,19 @@ docs.google.com/presentation googleslides:// スキームに変換してアプ�
 · アイコンを追加する場合は、SVG_ICONS に追記し、ICON_NAMES が自動的に更新される
 · 現在選択中のアイコンは青背景でハイライトされる
 
-3. 並び替え（SortableJS）
+3. 並び替え（Pointer Eventsによる自前実装）
 
-設定値：
+外部ライブラリ（SortableJS等）を使わず、`.drag-handle` への Pointer Events（pointerdown/pointermove/pointerup）で直接実装している。理由は、汎用ライブラリのネイティブDnDフォールバックはiOS Safariでは「浮いた」CSS演出（scale/box-shadow）が反映されないことがあり、フレーム単位で見た目を制御できる自前実装の方が狙った質感に近づけられるため。
 
-```js
-{
-  handle: '.drag-handle',
-  animation: 300,
-  easing: 'cubic-bezier(0.25,0.46,0.45,0.94)',
-  forceFallback: false,       // ネイティブDnDを優先
-  fallbackTolerance: 3,
-  swapThreshold: 0.65,
-  delay: 200,                  // 200ms長押しで開始
-  delayOnTouchOnly: true,      // タッチのみ遅延
-  ghostClass: 'sortable-ghost',
-  chosenClass: 'sortable-chosen',
-  dragClass: 'sortable-drag'
-}
-```
+実装の要点（`attachDragHandle` / `beginDrag`、index.html内）：
 
-UX上の意図：
-
-· 長押し200ms後にドラッグ開始（誤操作防止）
-· ドラッグ中のカードは scale(1.03) + 強い影で「浮いている」ように見せる
-· animation: 300 とカスタムイージングで滑らかな移動を実現
-· ドラッグ開始時に haptic() で触覚フィードバック
+· `DRAG_DELAY_MS`（200ms）: タッチ操作のみ、長押し判定を挟んでからドラッグ開始する（`delayOnTouchOnly`相当）。マウス/ペンは即座に開始
+· `DRAG_MOVE_TOLERANCE`（6px）: 長押し待機中にこの範囲を超えて動いたらスクロール操作とみなしドラッグを中断する
+· ドラッグ中の要素は実際のDOM位置を変えず、`transform: translateY() scale(1.03)` のみで追従させる（レイアウトに影響を与えないため、他の行の位置計算がシンプルになる）
+· 指の位置が何行分移動したか（`rowHeight`基準）で目標スロットを計算し、間にある行を `translateY(±rowHeight)` で仮に押し出して「場所を空ける」演出をする
+· `DRAG_SCROLL_EDGE`（48px）: 編集リストの上下端に指が近づくと自動スクロールする
+· ドロップ時はFLIP（First-Last-Invert-Play）で、直前の見た目位置からアニメーションしながら実際のDOM位置に確定させる
+· ドラッグ開始時に `haptic()` で触覚フィードバック
 
 4. ズーム・文字列選択の防止
 
@@ -161,7 +148,7 @@ iOSのPWA制約
 
 外部依存
 
-· SortableJS： CDNから読み込んでいる。Service Workerのキャッシュリストに含まれているため、一度読み込めばオフラインでも動作する
+· なし（並び替えを含め、外部ライブラリ・CDNには依存していない）
 · Google Favicon API： 現在は使用していない（自動ファビコン取得を廃止）。将来復活させる場合は、getFaviconUrl() 関数が残っているので活用できる
 
 開発時の注意

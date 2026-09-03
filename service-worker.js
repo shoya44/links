@@ -1,9 +1,8 @@
-const CACHE_NAME = 'link-launcher-v4';
+const CACHE_NAME = 'link-launcher-v5';
 const STATIC_ASSETS = [
   './',
   './index.html',
-  './manifest.json',
-  'https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js'
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {

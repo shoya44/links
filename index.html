@@ -10,7 +10,6 @@
   <title>links</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <style>
     :root{
       --bg-primary:#0a0a0f;
@@ -257,21 +256,12 @@
     @keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
     .link-item,.edit-item{animation:fadeInUp .25s ease both}
-    /* SortableJS ドラッグ中のスタイル */
-    .sortable-ghost{
-      opacity:.4;
-      background:var(--bg-tertiary)
-    }
-    .sortable-chosen{
-      background:var(--bg-tertiary)
-    }
-    .sortable-drag{
-      opacity:1!important;
+    /* ドラッグ中のスタイル（自前のPointer Events実装） */
+    .edit-item.dragging{
       background:var(--bg-tertiary);
-      transform:scale(1.03);
       box-shadow:0 16px 32px rgba(0,0,0,.5);
-      transition:transform .2s cubic-bezier(0.25,0.46,0.45,0.94),box-shadow .2s;
-      z-index:1000
+      position:relative;
+      z-index:50
     }
   </style>
 </head>
@@ -365,7 +355,7 @@
 
     // ===== IndexedDB =====
     const DB_NAME='link-launcher',DB_VERSION=1,STORE_NAME='links';
-    let db,links=[],editModeItems=[],isEditMode=false,sortableInstance=null;
+    let db,links=[],editModeItems=[],isEditMode=false;
     let iconTargetItem=null;
     let iconTargetRow=null;
 
@@ -527,7 +517,6 @@
         });
       }
       editModeItems.forEach((item,i)=>appendEditRow(item,i));
-      initSortable();
       if(wasEmpty){
         requestAnimationFrame(()=>{
           const input=editList.querySelector('.input-title');
@@ -587,6 +576,10 @@
         lines.slice(1).forEach(u=>addEditRow(normalizeUrlInput(u)));
       });
 
+      // ドラッグハンドルで並び替え（自前のPointer Events実装）
+      const dragHandle=li.querySelector('.drag-handle');
+      attachDragHandle(dragHandle,li);
+
       // アイコンクリック → SVGアイコンピッカー
       const iconDiv=li.querySelector('.edit-icon');
       iconDiv.addEventListener('click',(e)=>{
@@ -628,39 +621,166 @@
           const input=rows[rows.length-1].querySelector('.input-title');
           if(input)input.focus()
         }
-      });
-      initSortable()
+      })
     }
 
-    // ===== SortableJS =====
-    function initSortable(){
-      // CDN読み込み失敗時にSortableが未定義でも、他の編集操作（追加・貼り付け等）を止めない
-      if(typeof Sortable==='undefined')return;
-      if(sortableInstance)sortableInstance.destroy();
-      sortableInstance=new Sortable(editList,{
-        handle:'.drag-handle',
-        animation:300,
-        easing:'cubic-bezier(0.25,0.46,0.45,0.94)',
-        forceFallback:true,        // iOS SafariはネイティブDnDが不安定なためJSフォールバックを強制（.sortable-dragの見た目もこちらでないと反映されない）
-        fallbackOnBody:true,       // 編集リストのスクロール領域にクリップされないようbody基準で描画
-        fallbackTolerance:3,
-        swapThreshold:0.65,
-        delay:200,                  // 200ms長押しで開始
-        delayOnTouchOnly:true,      // タッチのみ遅延
-        ghostClass:'sortable-ghost',
-        chosenClass:'sortable-chosen',
-        dragClass:'sortable-drag',
-        onStart:()=>{
-          haptic();
-        },
-        onEnd:evt=>{
-          const {oldIndex,newIndex}=evt;
-          if(oldIndex===newIndex)return;
-          const [moved]=editModeItems.splice(oldIndex,1);
-          editModeItems.splice(newIndex,0,moved);
-          editModeItems.forEach((it,i)=>it.order=i)
+    // ===== 並び替え（自前のPointer Events実装） =====
+    // SortableJS等の汎用ライブラリを使わず、長押し→持ち上げ→追従→ドロップの
+    // 各フレームを自分で制御することで、iOS Safari上でも狙った「浮く」演出を出す。
+    const DRAG_LIST_GAP=12;          // .edit-list{gap:12px} と一致させる
+    const DRAG_DELAY_MS=200;         // 長押し判定（スクロールとの誤操作防止）
+    const DRAG_MOVE_TOLERANCE=6;     // 長押し待機中にこれ以上動いたらスクロールとみなし中断
+    const DRAG_SCROLL_EDGE=48;       // この範囲に入ったら自動スクロール
+    const DRAG_EASE='cubic-bezier(0.25,0.46,0.45,0.94)';
+
+    function attachDragHandle(handleEl,li){
+      handleEl.addEventListener('pointerdown',(e)=>{
+        if(e.pointerType==='mouse'&&e.button!==0)return;
+        const startX=e.clientX,startY=e.clientY;
+
+        if(e.pointerType!=='touch'){
+          beginDrag(e,li,handleEl);
+          return;
         }
-      })
+        // タッチの場合のみ長押し判定を挟み、スクロール操作と区別する
+        let timer=setTimeout(()=>{
+          cleanup();
+          beginDrag(e,li,handleEl);
+        },DRAG_DELAY_MS);
+        const onMove=(ev)=>{
+          if(Math.abs(ev.clientX-startX)>DRAG_MOVE_TOLERANCE||Math.abs(ev.clientY-startY)>DRAG_MOVE_TOLERANCE){
+            cleanup();
+          }
+        };
+        const cleanup=()=>{
+          clearTimeout(timer);
+          handleEl.removeEventListener('pointermove',onMove);
+          handleEl.removeEventListener('pointerup',cleanup);
+          handleEl.removeEventListener('pointercancel',cleanup);
+        };
+        handleEl.addEventListener('pointermove',onMove);
+        handleEl.addEventListener('pointerup',cleanup);
+        handleEl.addEventListener('pointercancel',cleanup);
+      });
+    }
+
+    function beginDrag(startEvent,li,handleEl){
+      haptic();
+      const pointerId=startEvent.pointerId;
+      const allRows=[...editList.querySelectorAll('.edit-item')];
+      const draggedIndex=allRows.indexOf(li);
+      if(draggedIndex===-1)return;
+      const rowHeight=li.getBoundingClientRect().height+DRAG_LIST_GAP;
+      const startClientY=startEvent.clientY;
+      const startScrollTop=editMode.scrollTop;
+      let currentIndex=draggedIndex;
+      let lastClientY=startClientY;
+      let rafId=null;
+
+      try{handleEl.setPointerCapture(pointerId)}catch(err){}
+
+      li.classList.add('dragging');
+      li.style.transition='transform .15s '+DRAG_EASE;
+      li.style.transform='translateY(0px) scale(1.03)';
+      setTimeout(()=>{li.style.transition='none'},150);
+
+      function applyShifts(newIndex){
+        allRows.forEach((row,i)=>{
+          if(row===li)return;
+          let shift=0;
+          if(newIndex>draggedIndex&&i>draggedIndex&&i<=newIndex)shift=-1;
+          else if(newIndex<draggedIndex&&i>=newIndex&&i<draggedIndex)shift=1;
+          row.style.transition='transform .2s '+DRAG_EASE;
+          row.style.transform=shift?('translateY('+(shift*rowHeight)+'px)'):'';
+        });
+      }
+
+      function updatePosition(clientY){
+        lastClientY=clientY;
+        const scrollDelta=editMode.scrollTop-startScrollTop;
+        const dy=(clientY-startClientY)+scrollDelta;
+        li.style.transform='translateY('+dy+'px) scale(1.03)';
+        const slotsMoved=Math.round(dy/rowHeight);
+        const newIndex=Math.max(0,Math.min(allRows.length-1,draggedIndex+slotsMoved));
+        if(newIndex!==currentIndex){
+          currentIndex=newIndex;
+          applyShifts(currentIndex);
+        }
+      }
+
+      function autoScrollTick(){
+        if(!dragActive)return;
+        const rect=editMode.getBoundingClientRect();
+        let dy=0;
+        if(lastClientY<rect.top+DRAG_SCROLL_EDGE)dy=-Math.ceil((rect.top+DRAG_SCROLL_EDGE-lastClientY)/4);
+        else if(lastClientY>rect.bottom-DRAG_SCROLL_EDGE)dy=Math.ceil((lastClientY-(rect.bottom-DRAG_SCROLL_EDGE))/4);
+        if(dy!==0){
+          editMode.scrollTop+=dy;
+          updatePosition(lastClientY);
+        }
+        rafId=requestAnimationFrame(autoScrollTick);
+      }
+
+      let dragActive=true;
+
+      function onMove(ev){
+        if(ev.pointerId!==pointerId)return;
+        updatePosition(ev.clientY);
+      }
+      function onUp(ev){
+        if(ev.pointerId!==pointerId)return;
+        endDrag();
+      }
+      function endDrag(){
+        dragActive=false;
+        handleEl.removeEventListener('pointermove',onMove);
+        handleEl.removeEventListener('pointerup',onUp);
+        handleEl.removeEventListener('pointercancel',onUp);
+        if(rafId)cancelAnimationFrame(rafId);
+        try{handleEl.releasePointerCapture(pointerId)}catch(err){}
+
+        const newIndex=currentIndex;
+        const beforeRect=li.getBoundingClientRect();
+
+        li.style.transition='none';
+        li.style.transform='';
+        allRows.forEach(row=>{
+          if(row===li)return;
+          row.style.transition='none';
+          row.style.transform=''
+        });
+
+        if(newIndex!==draggedIndex){
+          const [moved]=editModeItems.splice(draggedIndex,1);
+          editModeItems.splice(newIndex,0,moved);
+          editModeItems.forEach((it,i)=>it.order=i);
+          const remaining=[...editList.children].filter(r=>r!==li);
+          editList.insertBefore(li,remaining[newIndex]||null);
+        }
+
+        // FLIP: DOM上の位置確定後、直前の見た目位置から滑らかに着地させる。
+        // 「浮いた」見た目（影・背景）はスナップ演出が終わるまで保持する
+        const afterRect=li.getBoundingClientRect();
+        const deltaY=beforeRect.top-afterRect.top;
+        if(deltaY){
+          li.style.transform='translateY('+deltaY+'px) scale(1.03)';
+          requestAnimationFrame(()=>{
+            li.style.transition='transform .25s '+DRAG_EASE;
+            li.style.transform='';
+            setTimeout(()=>{
+              li.classList.remove('dragging');
+              li.style.transition=''
+            },250);
+          });
+        }else{
+          li.classList.remove('dragging');
+        }
+      }
+
+      handleEl.addEventListener('pointermove',onMove);
+      handleEl.addEventListener('pointerup',onUp);
+      handleEl.addEventListener('pointercancel',onUp);
+      rafId=requestAnimationFrame(autoScrollTick);
     }
 
     // ===== SVGアイコンピッカー =====
