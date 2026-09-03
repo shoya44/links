@@ -148,7 +148,8 @@
       display:flex;align-items:center;justify-content:center;
       min-width:36px;min-height:36px;
       border-radius:var(--radius-sm);
-      transition:background-color .2s
+      transition:background-color .2s;
+      touch-action:none
     }
     .drag-handle:active{
       cursor:grabbing;
@@ -182,6 +183,7 @@
     }
     .edit-item input:focus{border-bottom-color:var(--accent)}
     .edit-item input::placeholder{color:var(--text-tertiary)}
+    .edit-item input.invalid{border-bottom-color:var(--danger)}
     .edit-item input.input-url{font-size:13px;color:var(--text-secondary)}
     .delete-btn{
       background:none;border:none;color:var(--danger);
@@ -225,7 +227,7 @@
       gap:8px;margin-bottom:16px
     }
     .icon-option{
-      width:48px;height:48px;border-radius:var(--radius-sm);
+      width:100%;aspect-ratio:1;border-radius:var(--radius-sm);
       background:var(--bg-tertiary);border:none;cursor:pointer;
       display:flex;align-items:center;justify-content:center;
       transition:background-color .2s,transform .15s;
@@ -539,6 +541,7 @@
       const urlInput=li.querySelector('.input-url');
       urlInput.addEventListener('input',()=>{
         item.url=urlInput.value;
+        urlInput.classList.remove('invalid');
       });
       urlInput.addEventListener('blur',()=>{
         let v=urlInput.value.trim();
@@ -602,7 +605,8 @@
         handle:'.drag-handle',
         animation:300,
         easing:'cubic-bezier(0.25,0.46,0.45,0.94)',
-        forceFallback:false,       // ネイティブDnDを優先
+        forceFallback:true,        // iOS SafariはネイティブDnDが不安定なためJSフォールバックを強制（.sortable-dragの見た目もこちらでないと反映されない）
+        fallbackOnBody:true,       // 編集リストのスクロール領域にクリップされないようbody基準で描画
         fallbackTolerance:3,
         swapThreshold:0.65,
         delay:200,                  // 200ms長押しで開始
@@ -676,6 +680,25 @@
       renderEditMode()
     }
     async function saveAll(){
+      // URLが入力されているのに無効な行はサイレントに捨てず、エラー表示して保存を中断する
+      const invalidItems=editModeItems.filter(it=>it.url.trim()!==''&&!isValidUrl(it.url));
+      editList.querySelectorAll('.input-url.invalid').forEach(el=>el.classList.remove('invalid'));
+      if(invalidItems.length){
+        let firstInput=null;
+        invalidItems.forEach(it=>{
+          const li=editList.querySelector('.edit-item[data-id="'+it.id+'"]');
+          const input=li&&li.querySelector('.input-url');
+          if(input){
+            input.classList.add('invalid');
+            if(!firstInput)firstInput=input;
+          }
+        });
+        if(firstInput){
+          firstInput.scrollIntoView({block:'center',behavior:'smooth'});
+          firstInput.focus();
+        }
+        return;
+      }
       const validItems=editModeItems.filter(it=>isValidUrl(it.url));
       validItems.forEach((it,i)=>{it.order=i;it.updatedAt=Date.now()});
       const ids=new Set(validItems.map(i=>i.id));
