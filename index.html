@@ -61,7 +61,7 @@
     }
     /* 共通: 線画SVGアイコン */
     .header-logo svg,.header-btn svg,.link-icon svg,.drag-handle svg,.edit-icon svg,
-    .delete-btn svg,.add-btn svg,.icon-option svg,.empty-icon svg{
+    .delete-btn svg,.add-btn svg,.tool-btn svg,.icon-option svg,.empty-icon svg{
       stroke:currentColor;stroke-width:2;fill:none;
       stroke-linecap:round;stroke-linejoin:round
     }
@@ -193,6 +193,19 @@
     }
     .add-btn:active{background:var(--bg-tertiary);color:var(--text-primary)}
     .add-btn svg{width:16px;height:16px}
+    /* バックアップ（Export / Import） */
+    .edit-tools{
+      display:flex;justify-content:center;gap:8px;
+      margin-top:16px;padding-bottom:8px
+    }
+    .tool-btn{
+      display:flex;align-items:center;gap:6px;
+      background:none;border:none;color:var(--text-tertiary);
+      font-size:13px;font-weight:500;padding:10px 12px;min-height:44px;
+      border-radius:var(--radius-sm);cursor:pointer;transition:color .2s,background-color .2s
+    }
+    .tool-btn:active{color:var(--text-secondary);background:var(--bg-secondary)}
+    .tool-btn svg{width:14px;height:14px}
     /* アイコンピッカーモーダル */
     .icon-modal-overlay{
       position:fixed;inset:0;
@@ -301,6 +314,17 @@
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         Add
       </button>
+      <div class="edit-tools">
+        <button type="button" id="exportBtn" class="tool-btn" aria-label="Export links">
+          <svg viewBox="0 0 24 24"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
+          Export
+        </button>
+        <button type="button" id="importBtn" class="tool-btn" aria-label="Import links">
+          <svg viewBox="0 0 24 24"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7"/><path d="M8 11l4 4 4-4"/><path d="M12 15V2"/></svg>
+          Import
+        </button>
+        <input type="file" id="importFile" accept=".json,.txt,application/json,text/plain" hidden>
+      </div>
     </main>
   </div>
 
@@ -464,6 +488,9 @@
     const cancelBtn=document.getElementById('cancelBtn');
     const saveBtn=document.getElementById('saveBtn');
     const addBtn=document.getElementById('addBtn');
+    const exportBtn=document.getElementById('exportBtn');
+    const importBtn=document.getElementById('importBtn');
+    const importFile=document.getElementById('importFile');
     const normalHeader=document.getElementById('normalHeader');
     const editHeader=document.getElementById('editHeader');
     const iconModal=document.getElementById('iconModal');
@@ -915,6 +942,71 @@
         saveBtn.disabled=false
       }
     }
+
+    // ===== バックアップ（Export / Import） =====
+    // iOSはPWAを7日間起動しないとIndexedDBが消えることがあるため、手動で退避できるようにする。
+    // 書き出しは共有シート（ファイルに保存・AirDrop等）を優先し、使えなければダウンロードにフォールバック。
+    const BACKUP_FORMAT='links-backup';
+    const BACKUP_VERSION=1;
+
+    async function exportLinks(){
+      // 保存済みではなく、いま編集中の内容（空欄行を除く）を書き出す
+      const items=editModeItems.filter(it=>it.url.trim()!=='').map(it=>({url:normalizeUrlInput(it.url),title:it.title,icon:it.icon}));
+      if(!items.length){alert('No links to export.');return}
+      const json=JSON.stringify({format:BACKUP_FORMAT,version:BACKUP_VERSION,exportedAt:new Date().toISOString(),links:items},null,2);
+      const filename='links-'+new Date().toISOString().slice(0,10)+'.json';
+      const file=new File([json],filename,{type:'application/json'});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){
+        try{await navigator.share({files:[file],title:'links backup'})}catch(err){/* キャンセル */}
+        return
+      }
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(file);
+      a.download=filename;
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1000)
+    }
+
+    // バックアップJSON、または1行1URLのテキストからリンク一覧を取り出す
+    function parseImport(text){
+      try{
+        const data=JSON.parse(text);
+        const arr=Array.isArray(data)?data:(data&&Array.isArray(data.links)?data.links:null);
+        if(arr)return arr.filter(x=>x&&typeof x.url==='string').map(x=>({
+          url:normalizeUrlInput(x.url),
+          title:typeof x.title==='string'?x.title:'',
+          icon:(typeof x.icon==='string'&&(SVG_ICONS[x.icon]||isImageIcon(x.icon)))?x.icon:DEFAULT_ICON
+        }))
+      }catch{}
+      return text.split(/[\r\n]+/).map(s=>s.trim()).filter(Boolean).map(u=>({url:normalizeUrlInput(u),title:'',icon:DEFAULT_ICON}))
+    }
+
+    async function importLinksFromFile(file){
+      const parsed=parseImport(await file.text()).filter(x=>isValidUrl(x.url));
+      // 既にある（または今回追加済みの）URLは飛ばして、編集中のリストの末尾に追加する
+      const existing=new Set(editModeItems.map(it=>normalizeUrlInput(it.url)));
+      let added=0;
+      parsed.forEach(x=>{
+        if(existing.has(x.url))return;
+        existing.add(x.url);
+        // 空欄だけの行が1つあるだけなら、その行を使う
+        const blank=editModeItems.length===1&&editModeItems[0].url.trim()===''&&editModeItems[0].title.trim()===''?editModeItems[0]:null;
+        const item=blank||createLinkItem(x.url,editModeItems.length);
+        item.url=x.url;item.title=x.title;item.icon=x.icon;
+        if(!blank)editModeItems.push(item);
+        added++
+      });
+      if(!added){alert(parsed.length?'All links already exist.':'No links found in the file.');return}
+      rerenderEditList();
+      editMode.scrollTop=editMode.scrollHeight
+    }
+
+    exportBtn.addEventListener('click',exportLinks);
+    importBtn.addEventListener('click',()=>{importFile.value='';importFile.click()});
+    importFile.addEventListener('change',()=>{
+      const file=importFile.files&&importFile.files[0];
+      if(file)importLinksFromFile(file).catch(err=>{console.error(err);alert('Failed to import.')})
+    });
 
     // ===== イベント登録 =====
     editBtn.addEventListener('click',showEditMode);
