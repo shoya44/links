@@ -121,8 +121,10 @@
     /* 空状態 */
     .empty-state{
       display:flex;flex-direction:column;align-items:center;justify-content:center;
-      flex:1;color:var(--text-tertiary);gap:12px;padding:40px 0
+      flex:1;color:var(--text-tertiary);gap:12px;padding:40px 0;
+      cursor:pointer;transition:opacity .2s
     }
+    .empty-state:active{opacity:.6}
     .empty-icon svg{width:48px;height:48px;stroke-width:1.5}
     .empty-text{font-size:15px}
     .empty-hint{font-size:13px}
@@ -481,7 +483,9 @@
         li.className='empty-state';
         li.innerHTML='<div class="empty-icon">'+SVG_ICONS[DEFAULT_ICON]+'</div>'+
           '<div class="empty-text">No links yet</div>'+
-          '<div class="empty-text empty-hint">Tap Edit to add links</div>';
+          '<div class="empty-text empty-hint">Tap to add links</div>';
+        // 空状態そのものをタップしても編集モードに入れる
+        li.addEventListener('click',showEditMode);
         linkList.appendChild(li);
         return
       }
@@ -821,6 +825,17 @@
     });
 
     // ===== モード切替 =====
+    // 編集内容が保存済みの内容と異なるか（空欄だけの行は無視する）
+    function hasUnsavedChanges(){
+      const key=it=>[it.id,it.url,it.title,it.icon].join(' ');
+      const edited=editModeItems.filter(it=>it.url.trim()!==''||it.title.trim()!=='').map(key);
+      const saved=links.map(key);
+      return edited.length!==saved.length||edited.some((k,i)=>k!==saved[i])
+    }
+    function cancelEdit(){
+      if(hasUnsavedChanges()&&!confirm('Discard unsaved changes?'))return;
+      showNormalMode()
+    }
     function showNormalMode(){
       normalMode.classList.add('active');
       editMode.classList.remove('active');
@@ -903,7 +918,7 @@
 
     // ===== イベント登録 =====
     editBtn.addEventListener('click',showEditMode);
-    cancelBtn.addEventListener('click',showNormalMode);
+    cancelBtn.addEventListener('click',cancelEdit);
     saveBtn.addEventListener('click',saveAll);
     addBtn.addEventListener('click',()=>addEditRow());
 
