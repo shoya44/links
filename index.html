@@ -538,10 +538,11 @@
         '<div class="row-top">'+
           '<span class="drag-handle" aria-label="Drag to reorder">'+UI_SVG.dragHandle+'</span>'+
           '<button type="button" class="edit-icon" aria-label="Change icon"></button>'+
-          '<input type="text" class="input-title" placeholder="Title" aria-label="Title">'+
+          '<input type="text" class="input-title" placeholder="Title" aria-label="Title" enterkeyhint="next" autocomplete="off">'+
           '<button type="button" class="delete-btn" aria-label="Delete">'+UI_SVG.close+'</button>'+
         '</div>'+
-        '<input type="url" class="input-url" placeholder="https://example.com" aria-label="URL">';
+        // iOSのキーボードでURLを打ちやすくする: 自動大文字化・自動修正・スペルチェックを切り、URL用配列にする
+        '<input type="url" class="input-url" placeholder="https://example.com" aria-label="URL" inputmode="url" enterkeyhint="done" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off">';
 
       // 値は属性文字列に埋め込まず、プロパティで設定する（" を含むタイトルでも壊れない）
       const iconBtn=li.querySelector('.edit-icon');
@@ -549,20 +550,37 @@
       iconBtn.addEventListener('click',()=>showIconModal(item,li));
 
       const titleInput=li.querySelector('.input-title');
-      titleInput.value=item.title||'';
-      titleInput.addEventListener('input',()=>{item.title=titleInput.value});
-
       const urlInput=li.querySelector('.input-url');
+      titleInput.value=item.title||'';
       urlInput.value=item.url||'';
+
+      // タイトル空欄時は、保存時に補完されるホスト名をプレースホルダで予告する
+      function updateTitlePlaceholder(){
+        const u=normalizeUrlInput(item.url);
+        titleInput.placeholder=(u&&isValidUrl(u))?defaultTitleFromUrl(u):'Title'
+      }
+      updateTitlePlaceholder();
+
+      titleInput.addEventListener('input',()=>{item.title=titleInput.value});
+      // キーボードの「次へ」でURL欄に移動
+      titleInput.addEventListener('keydown',e=>{
+        if(e.key==='Enter'){e.preventDefault();urlInput.focus()}
+      });
+
       urlInput.addEventListener('input',()=>{
         item.url=urlInput.value;
-        urlInput.classList.remove('invalid')
+        urlInput.classList.remove('invalid');
+        updateTitlePlaceholder()
       });
       urlInput.addEventListener('blur',()=>{
         if(!urlInput.value.trim())return;
         const v=normalizeUrlInput(urlInput.value);
         urlInput.value=v;
         item.url=v
+      });
+      // キーボードの「完了」でキーボードを閉じる（blurで正規化も走る）
+      urlInput.addEventListener('keydown',e=>{
+        if(e.key==='Enter'){e.preventDefault();urlInput.blur()}
       });
       // 複数行のURLをまとめてペーストした場合、1行目は現在の行に、
       // 2行目以降はそれぞれ新しい行として追加する
@@ -575,6 +593,7 @@
         urlInput.value=firstUrl;
         item.url=firstUrl;
         urlInput.classList.remove('invalid');
+        updateTitlePlaceholder();
         lines.slice(1).forEach(u=>addEditRow(normalizeUrlInput(u)))
       });
 
