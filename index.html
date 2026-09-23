@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1.0, minimum-scale=1.0">
+  <meta name="description" content="Quick access to your frequently used links">
   <meta name="theme-color" content="#0a0a0f">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="links">
@@ -32,9 +34,6 @@
       margin:0;padding:0;box-sizing:border-box;
       -webkit-touch-callout:none;
       -webkit-user-select:none;
-      -khtml-user-select:none;
-      -moz-user-select:none;
-      -ms-user-select:none;
       user-select:none;
       -webkit-tap-highlight-color:transparent;
       touch-action:manipulation
@@ -52,11 +51,19 @@
       -webkit-font-smoothing:antialiased;
       overscroll-behavior:none
     }
+    button{font-family:var(--font)}
+    button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
     #app{
       display:flex;flex-direction:column;height:100%;
       max-width:600px;margin:0 auto;
       padding-top:var(--safe-top);
       padding-bottom:var(--safe-bottom)
+    }
+    /* 共通: 線画SVGアイコン */
+    .header-logo svg,.header-btn svg,.link-icon svg,.drag-handle svg,.edit-icon svg,
+    .delete-btn svg,.add-btn svg,.icon-option svg,.empty-icon svg{
+      stroke:currentColor;stroke-width:2;fill:none;
+      stroke-linecap:round;stroke-linejoin:round
     }
     /* ヘッダー */
     .header{
@@ -67,26 +74,22 @@
     .header-logo{
       width:28px;height:28px;
       display:flex;align-items:center;justify-content:center;
-      flex-shrink:0
+      flex-shrink:0;color:var(--text-primary)
     }
-    .header-logo svg{
-      width:100%;height:100%;
-      stroke:var(--text-primary);
-      stroke-width:2;fill:none;
-      stroke-linecap:round;stroke-linejoin:round
-    }
+    .header-logo svg{width:100%;height:100%}
     .header-btn{
       display:flex;align-items:center;gap:6px;
       background:none;border:none;
       color:var(--accent);
-      font-size:15px;font-weight:500;font-family:var(--font);
+      font-size:15px;font-weight:500;
       padding:8px 12px;border-radius:var(--radius-sm);
       min-height:44px;
       cursor:pointer;transition:opacity .2s
     }
     .header-btn:active{opacity:.5}
+    .header-btn:disabled{opacity:.5;cursor:default}
     .header-btn.primary{font-weight:600}
-    .header-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+    .header-btn svg{width:16px;height:16px}
     /* モード切替 */
     .mode{
       display:none;flex:1;overflow-y:auto;
@@ -104,15 +107,11 @@
     .link-item:active{transform:scale(.98);background-color:var(--bg-tertiary)}
     .link-icon{
       width:40px;height:40px;border-radius:10px;
-      background:var(--bg-tertiary);
+      background:var(--bg-tertiary);color:var(--text-primary);
       display:flex;align-items:center;justify-content:center;
       flex-shrink:0;overflow:hidden
     }
-    .link-icon svg{
-      width:20px;height:20px;
-      stroke:var(--text-primary);stroke-width:2;
-      fill:none;stroke-linecap:round;stroke-linejoin:round
-    }
+    .link-icon svg{width:20px;height:20px}
     .link-icon img{width:100%;height:100%;object-fit:cover;border-radius:10px}
     .link-title{
       flex:1;font-size:16px;font-weight:500;
@@ -124,14 +123,10 @@
       display:flex;flex-direction:column;align-items:center;justify-content:center;
       flex:1;color:var(--text-tertiary);gap:12px;padding:40px 0
     }
-    .empty-icon{font-size:48px}
+    .empty-icon svg{width:48px;height:48px;stroke-width:1.5}
     .empty-text{font-size:15px}
+    .empty-hint{font-size:13px}
     /* 編集モード */
-    .edit-header{
-      display:flex;align-items:center;justify-content:space-between;
-      padding:0 0 12px;flex-shrink:0;
-      min-height:56px
-    }
     .edit-list{gap:12px}
     .edit-item{
       display:flex;flex-direction:column;
@@ -155,24 +150,16 @@
       cursor:grabbing;
       background:var(--bg-tertiary)
     }
-    .drag-handle svg{
-      width:20px;height:20px;
-      stroke:currentColor;stroke-width:2;
-      fill:none;stroke-linecap:round;stroke-linejoin:round
-    }
+    .drag-handle svg{width:20px;height:20px}
     .edit-icon{
-      width:44px;height:44px;border-radius:8px;
-      background:var(--bg-tertiary);
+      width:44px;height:44px;border-radius:8px;border:none;padding:0;
+      background:var(--bg-tertiary);color:var(--text-primary);
       display:flex;align-items:center;justify-content:center;
       flex-shrink:0;overflow:hidden;cursor:pointer;
       transition:opacity .2s
     }
     .edit-icon:active{opacity:.7}
-    .edit-icon svg{
-      width:18px;height:18px;
-      stroke:var(--text-primary);stroke-width:2;
-      fill:none;stroke-linecap:round;stroke-linejoin:round
-    }
+    .edit-icon svg{width:18px;height:18px}
     .edit-icon img{width:100%;height:100%;object-fit:cover}
     .edit-item input{
       background:transparent;border:none;
@@ -193,20 +180,20 @@
       min-width:44px;min-height:44px
     }
     .delete-btn:active{background-color:rgba(255,69,58,.15)}
-    .delete-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+    .delete-btn svg{width:16px;height:16px}
     /* 追加ボタン */
     .add-btn{
       display:flex;align-items:center;justify-content:center;gap:8px;
       background:var(--bg-secondary);border:1px dashed var(--separator);
-      color:var(--text-secondary);font-family:var(--font);
+      color:var(--text-secondary);
       font-size:15px;font-weight:500;padding:16px;border-radius:var(--radius-md);
       cursor:pointer;margin-top:12px;transition:background-color .2s,color .2s
     }
     .add-btn:active{background:var(--bg-tertiary);color:var(--text-primary)}
-    .add-btn svg{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round}
+    .add-btn svg{width:16px;height:16px}
     /* アイコンピッカーモーダル */
     .icon-modal-overlay{
-      position:fixed;top:0;left:0;right:0;bottom:0;
+      position:fixed;inset:0;
       background:rgba(0,0,0,.6);z-index:100;
       display:flex;align-items:center;justify-content:center;
       animation:fadeIn .2s ease
@@ -234,11 +221,7 @@
       color:var(--text-primary)
     }
     .icon-option:active{background:var(--separator);transform:scale(.9)}
-    .icon-option svg{
-      width:22px;height:22px;
-      stroke:currentColor;stroke-width:2;
-      fill:none;stroke-linecap:round;stroke-linejoin:round
-    }
+    .icon-option svg{width:22px;height:22px}
     .icon-option.selected{
       background:var(--accent);
       color:#fff
@@ -247,7 +230,7 @@
       width:100%;min-height:44px;padding:10px;border:none;
       display:flex;align-items:center;justify-content:center;
       background:var(--bg-tertiary);color:var(--text-secondary);
-      font-family:var(--font);font-size:14px;font-weight:500;
+      font-size:14px;font-weight:500;
       border-radius:var(--radius-sm);cursor:pointer;
       transition:background-color .2s
     }
@@ -255,13 +238,18 @@
     /* アニメーション */
     @keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
     @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-    .link-item,.edit-item{animation:fadeInUp .25s ease both}
+    /* fill-modeは backwards にする。both/forwards だとアニメーション終了後も
+       to の transform が残り、:active の縮小やドラッグ中のインライン transform を上書きしてしまう */
+    .link-item,.edit-item{animation:fadeInUp .25s ease backwards}
     /* ドラッグ中のスタイル（自前のPointer Events実装） */
     .edit-item.dragging{
       background:var(--bg-tertiary);
       box-shadow:0 16px 32px rgba(0,0,0,.5);
       position:relative;
       z-index:50
+    }
+    @media (prefers-reduced-motion:reduce){
+      *{animation-duration:.01ms!important;transition-duration:.01ms!important}
     }
   </style>
 </head>
@@ -275,7 +263,7 @@
           <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
         </svg>
       </div>
-      <button id="editBtn" class="header-btn" aria-label="Edit">
+      <button type="button" id="editBtn" class="header-btn" aria-label="Edit">
         <svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         Edit
       </button>
@@ -283,7 +271,7 @@
 
     <!-- 編集モードヘッダー -->
     <header class="header" id="editHeader" style="display:none">
-      <button id="cancelBtn" class="header-btn" aria-label="Cancel">
+      <button type="button" id="cancelBtn" class="header-btn" aria-label="Cancel">
         <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
         Cancel
       </button>
@@ -293,7 +281,7 @@
           <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
         </svg>
       </div>
-      <button id="saveBtn" class="header-btn primary" aria-label="Save">
+      <button type="button" id="saveBtn" class="header-btn primary" aria-label="Save">
         <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
         Save
       </button>
@@ -307,7 +295,7 @@
     <!-- 編集モード -->
     <main id="editMode" class="mode">
       <ul id="editList" class="link-list edit-list"></ul>
-      <button id="addBtn" class="add-btn" aria-label="Add link">
+      <button type="button" id="addBtn" class="add-btn" aria-label="Add link">
         <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
         Add
       </button>
@@ -315,49 +303,54 @@
   </div>
 
   <!-- アイコンピッカーモーダル -->
-  <div id="iconModal" class="icon-modal-overlay" style="display:none">
+  <div id="iconModal" class="icon-modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="iconModalTitle">
     <div class="icon-modal">
-      <div class="icon-modal-title">アイコンを選択</div>
+      <div class="icon-modal-title" id="iconModalTitle">アイコンを選択</div>
       <div class="icon-grid" id="iconGrid"></div>
-      <button class="icon-modal-close" id="iconClose">キャンセル</button>
+      <button type="button" class="icon-modal-close" id="iconClose">キャンセル</button>
     </div>
   </div>
 
   <script>
     // ===== SVGアイコン定義（Lucide/Feather風） =====
-    const SVG_ICONS = {
-      'link': '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
-      'file': '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
-      'table': '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>',
-      'calendar': '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
-      'mail': '<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg>',
-      'chat': '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
-      'settings': '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
-      'folder': '<svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>',
-      'chart': '<svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>',
-      'clock': '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
-      'wallet': '<svg viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg>',
-      'cloud': '<svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>',
-      'book': '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
-      'briefcase': '<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>',
-      'home': '<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>',
-      'user': '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-      'check': '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>',
-      'pen': '<svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
-      'star': '<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>',
-      'heart': '<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
-      'bell': '<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
-      'globe': '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>',
-      'download': '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
-      'code': '<svg viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>'
+    // アイコンを追加する場合はここに追記するだけでよい（ピッカーは ICON_NAMES から自動生成）
+    const SVG_ICONS={
+      'link':'<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>',
+      'file':'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>',
+      'table':'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>',
+      'calendar':'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+      'mail':'<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 6l-10 7L2 6"/></svg>',
+      'chat':'<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+      'settings':'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
+      'folder':'<svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>',
+      'chart':'<svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>',
+      'clock':'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+      'wallet':'<svg viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 010-4h14v4"/><path d="M3 5v14a2 2 0 002 2h16v-5"/><path d="M18 12a2 2 0 000 4h4v-4z"/></svg>',
+      'cloud':'<svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/></svg>',
+      'book':'<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
+      'briefcase':'<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>',
+      'home':'<svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>',
+      'user':'<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+      'check':'<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>',
+      'pen':'<svg viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+      'star':'<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>',
+      'heart':'<svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
+      'bell':'<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>',
+      'globe':'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>',
+      'download':'<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
+      'code':'<svg viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>'
     };
-    const ICON_NAMES = Object.keys(SVG_ICONS);
+    const ICON_NAMES=Object.keys(SVG_ICONS);
+    const DEFAULT_ICON='link';
+    // UI部品用のSVG（ピッカーには出さない）
+    const UI_SVG={
+      close:'<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+      dragHandle:'<svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5" fill="currentColor"/><circle cx="15" cy="6" r="1.5" fill="currentColor"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="18" r="1.5" fill="currentColor"/><circle cx="15" cy="18" r="1.5" fill="currentColor"/></svg>'
+    };
 
     // ===== IndexedDB =====
     const DB_NAME='link-launcher',DB_VERSION=1,STORE_NAME='links';
-    let db,links=[],editModeItems=[],isEditMode=false;
-    let iconTargetItem=null;
-    let iconTargetRow=null;
+    let db;
 
     function openDB(){
       return new Promise((res,rej)=>{
@@ -376,97 +369,85 @@
     }
     function getAllLinks(){
       return new Promise((res,rej)=>{
-        const tx=db.transaction(STORE_NAME,'readonly'),st=tx.objectStore(STORE_NAME),req=st.getAll();
+        const tx=db.transaction(STORE_NAME,'readonly'),req=tx.objectStore(STORE_NAME).getAll();
         req.onsuccess=()=>{const l=req.result||[];l.sort((a,b)=>a.order-b.order);res(l)};
         req.onerror=()=>rej(req.error)
       })
     }
-    function saveLink(link){
+    // ストアの中身を items で丸ごと置き換える（1トランザクションで原子的に行う）。
+    // url には一意インデックスがあるため、個別に put/delete すると順序次第で
+    // ConstraintError になる（例: 2件のURLを入れ替えた場合）。clear→put ならその心配がない。
+    function replaceAllLinks(items){
       return new Promise((res,rej)=>{
         const tx=db.transaction(STORE_NAME,'readwrite'),st=tx.objectStore(STORE_NAME);
-        st.put(link);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)
-      })
-    }
-    function deleteLink(id){
-      return new Promise((res,rej)=>{
-        const tx=db.transaction(STORE_NAME,'readwrite'),st=tx.objectStore(STORE_NAME);
-        st.delete(id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)
+        st.clear();
+        items.forEach(it=>st.put(it));
+        tx.oncomplete=()=>res();
+        tx.onerror=()=>rej(tx.error);
+        tx.onabort=()=>rej(tx.error)
       })
     }
     function generateId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+    function createLinkItem(url,order){
+      const now=Date.now();
+      return {id:generateId(),url:url||'',title:'',icon:DEFAULT_ICON,order,createdAt:now,updatedAt:now}
+    }
 
     // ===== ユーティリティ =====
-    function getFaviconUrl(url){
-      try{return 'https://www.google.com/s2/favicons?domain='+new URL(url).hostname+'&sz=64'}catch{return ''}
-    }
-    function escapeHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
     function isValidUrl(s){try{new URL(s);return true}catch{return false}}
     function normalizeUrlInput(v){
       v=(v||'').trim();
-      if(v&&!v.match(/^https?:\/\//))v='https://'+v;
+      if(v&&!/^https?:\/\//i.test(v))v='https://'+v;
       return v
     }
-    function defaultTitleFromUrl(url){
-      try{return new URL(url).hostname.replace(/^www\./,'')}catch{return url}
-    }
+    function hostnameOf(url){try{return new URL(url).hostname}catch{return ''}}
+    function defaultTitleFromUrl(url){return hostnameOf(url).replace(/^www\./,'')||url}
     function haptic(){if(navigator.vibrate)navigator.vibrate(10)}
-    function isGoogleUrl(url){
-      return url.includes('google.com')||url.includes('google.co.jp')||url.includes('accounts.google')
-    }
-    function isSheetsUrl(url){return url.includes('docs.google.com/spreadsheets')}
-    function isDocsUrl(url){return url.includes('docs.google.com/document')}
-    function isSlidesUrl(url){return url.includes('docs.google.com/presentation')}
+    function isGoogleUrl(url){return /(^|\.)google\.(com|co\.jp)$/.test(hostnameOf(url))}
+    function isImageIcon(icon){return /^(https?:|data:)/.test(icon||'')}
 
-    function renderIcon(link){
-      // SVGアイコン名が設定されている場合
-      if(link.icon && SVG_ICONS[link.icon]){
-        return SVG_ICONS[link.icon];
+    // container の中身を link.icon に応じたアイコンに差し替える
+    //   - SVG_ICONS のキー名 → 内蔵SVG
+    //   - http(s):// または data: → 画像（旧データ互換。読み込み失敗時は既定アイコン）
+    //   - それ以外 → 既定アイコン
+    function setIcon(container,link){
+      const icon=link.icon;
+      if(icon&&SVG_ICONS[icon]){container.innerHTML=SVG_ICONS[icon];return}
+      if(isImageIcon(icon)){
+        const img=document.createElement('img');
+        img.alt='';img.loading='lazy';img.src=icon;
+        img.addEventListener('error',()=>{container.innerHTML=SVG_ICONS[DEFAULT_ICON]},{once:true});
+        container.replaceChildren(img);
+        return
       }
-      // ファビコンURLの場合（既存データ用）
-      if(link.icon && (link.icon.startsWith('http')||link.icon.startsWith('data:'))){
-        return '<img src="'+link.icon+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.parentElement.innerHTML=\''+SVG_ICONS['link']+'\'">';
-      }
-      // デフォルト（リンクアイコン）
-      return SVG_ICONS['link'];
+      container.innerHTML=SVG_ICONS[DEFAULT_ICON]
     }
 
     // ===== リンクを開く =====
+    // Googleのドキュメント系は専用アプリのURLスキームで開く（複数アカウント時の権限エラー回避）。
+    // アプリが無い場合の検知はできないので、一定時間後もこの画面が表示されたままなら
+    // ブラウザで開き直す。
+    const GOOGLE_APP_SCHEMES=[
+      {path:'docs.google.com/spreadsheets',scheme:'googlesheets://'},
+      {path:'docs.google.com/document',scheme:'googledocs://'},
+      {path:'docs.google.com/presentation',scheme:'googleslides://'}
+    ];
+    const APP_SCHEME_FALLBACK_MS=1500;
+
     function openLink(link){
       const url=link.url;
       haptic();
-      if(isSheetsUrl(url)){
-        const appUrl=url.replace('https://','googlesheets://');
-        window.location.href=appUrl;
+      const app=GOOGLE_APP_SCHEMES.find(a=>url.includes(a.path));
+      if(app){
+        window.location.href=url.replace(/^https?:\/\//,app.scheme);
         setTimeout(()=>{
-          if(document.visibilityState==='visible'){
-            window.open(url,'_blank','noopener')
-          }
-        },1500);
-        return
-      }
-      if(isDocsUrl(url)){
-        const appUrl=url.replace('https://','googledocs://');
-        window.location.href=appUrl;
-        setTimeout(()=>{
-          if(document.visibilityState==='visible'){
-            window.open(url,'_blank','noopener')
-          }
-        },1500);
-        return
-      }
-      if(isSlidesUrl(url)){
-        const appUrl=url.replace('https://','googleslides://');
-        window.location.href=appUrl;
-        setTimeout(()=>{
-          if(document.visibilityState==='visible'){
-            window.open(url,'_blank','noopener')
-          }
-        },1500);
+          if(document.visibilityState==='visible')window.open(url,'_blank','noopener')
+        },APP_SCHEME_FALLBACK_MS);
         return
       }
       if(isGoogleUrl(url)){
-        const chooserUrl='https://accounts.google.com/AccountChooser?continue='+encodeURIComponent(url)+'&hl=ja';
-        window.open(chooserUrl,'_blank','noopener');
+        // その他のGoogle URLはアカウント選択画面を経由して開く
+        window.open('https://accounts.google.com/AccountChooser?continue='+encodeURIComponent(url)+'&hl=ja','_blank','noopener');
         return
       }
       window.open(url,'_blank','noopener')
@@ -487,19 +468,30 @@
     const iconGrid=document.getElementById('iconGrid');
     const iconClose=document.getElementById('iconClose');
 
+    // ===== 状態 =====
+    let links=[];          // 保存済みのリンク一覧（order順）
+    let editModeItems=[];  // 編集中の作業コピー。Saveで links に反映、Cancelで破棄
+    let isSaving=false;
+
     // ===== 通常モードのレンダリング =====
     function renderNormalMode(){
-      linkList.innerHTML='';
+      linkList.replaceChildren();
       if(links.length===0){
-        linkList.innerHTML='<div class="empty-state"><div class="empty-icon">🔗</div><div class="empty-text">No links yet</div><div class="empty-text" style="font-size:13px;">Tap Edit to add links</div></div>';
+        const li=document.createElement('li');
+        li.className='empty-state';
+        li.innerHTML='<div class="empty-icon">'+SVG_ICONS[DEFAULT_ICON]+'</div>'+
+          '<div class="empty-text">No links yet</div>'+
+          '<div class="empty-text empty-hint">Tap Edit to add links</div>';
+        linkList.appendChild(li);
         return
       }
       links.forEach((link,i)=>{
         const li=document.createElement('li');
         li.className='link-item';
         li.style.animationDelay=(i*0.03)+'s';
-        const iconHtml=renderIcon(link);
-        li.innerHTML='<div class="link-icon">'+iconHtml+'</div><span class="link-title">'+escapeHtml(link.title||link.url)+'</span><span class="link-arrow">↗</span>';
+        li.innerHTML='<div class="link-icon"></div><span class="link-title"></span><span class="link-arrow">↗</span>';
+        setIcon(li.querySelector('.link-icon'),link);
+        li.querySelector('.link-title').textContent=link.title||link.url;
         li.addEventListener('click',()=>openLink(link));
         linkList.appendChild(li)
       })
@@ -509,69 +501,72 @@
     // 編集モードに入る時だけ呼ぶ。保存済みのlinksから作業用コピーを作り直す。
     function renderEditMode(){
       editModeItems=links.map(l=>({...l}));
-      rerenderEditList();
+      rerenderEditList()
     }
 
-    // 編集中（削除・追加など）の再描画に使う。editModeItemsはlinksから
-    // 作り直さず、現在の内容をそのままDOMに反映するだけ。
+    // 編集中（削除など）の再描画に使う。editModeItemsはlinksから作り直さず、
+    // 現在の内容をそのままDOMに反映するだけ。行が0件なら空の行を1つ用意する。
     function rerenderEditList(){
-      editList.innerHTML='';
+      editList.replaceChildren();
       const wasEmpty=editModeItems.length===0;
-      if(wasEmpty){
-        editModeItems.push({
-          id:generateId(),url:'',title:'',icon:'link',order:0,
-          createdAt:Date.now(),updatedAt:Date.now()
-        });
-      }
+      if(wasEmpty)editModeItems.push(createLinkItem('',0));
       editModeItems.forEach((item,i)=>appendEditRow(item,i));
-      if(wasEmpty){
-        requestAnimationFrame(()=>{
-          const input=editList.querySelector('.input-title');
-          if(input)input.focus()
-        });
-      }
+      if(wasEmpty)focusLastTitleInput()
     }
 
-    function appendEditRow(item,index){
+    function focusLastTitleInput(){
+      requestAnimationFrame(()=>{
+        const rows=editList.querySelectorAll('.edit-item');
+        const input=rows.length?rows[rows.length-1].querySelector('.input-title'):null;
+        if(input)input.focus()
+      })
+    }
+
+    function urlInputFor(id){
+      const li=editList.querySelector('.edit-item[data-id="'+id+'"]');
+      return li?li.querySelector('.input-url'):null
+    }
+
+    // item に対応する編集行を editList の末尾に追加する。
+    // delayIndex はフェードインの開始をずらすためだけに使う（一覧表示時に上から順に現れる演出）。
+    function appendEditRow(item,delayIndex){
       const li=document.createElement('li');
       li.className='edit-item';
-      li.style.animationDelay=(index*0.03)+'s';
+      li.style.animationDelay=(delayIndex*0.03)+'s';
       li.dataset.id=item.id;
-
-      const iconHtml=renderIcon(item);
-
       li.innerHTML=
         '<div class="row-top">'+
-          '<span class="drag-handle" aria-label="Drag to reorder">'+
-            '<svg viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.5" fill="currentColor"/><circle cx="15" cy="6" r="1.5" fill="currentColor"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="18" r="1.5" fill="currentColor"/><circle cx="15" cy="18" r="1.5" fill="currentColor"/></svg>'+
-          '</span>'+
-          '<div class="edit-icon" data-index="'+index+'">'+iconHtml+'</div>'+
-          '<input type="text" class="input-title" placeholder="Title" value="'+escapeHtml(item.title||'')+'" aria-label="Title">'+
-          '<button class="delete-btn" aria-label="Delete">'+
-            '<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>'+
-          '</button>'+
+          '<span class="drag-handle" aria-label="Drag to reorder">'+UI_SVG.dragHandle+'</span>'+
+          '<button type="button" class="edit-icon" aria-label="Change icon"></button>'+
+          '<input type="text" class="input-title" placeholder="Title" aria-label="Title">'+
+          '<button type="button" class="delete-btn" aria-label="Delete">'+UI_SVG.close+'</button>'+
         '</div>'+
-        '<input type="url" class="input-url" placeholder="https://example.com" value="'+escapeHtml(item.url||'')+'" aria-label="URL">';
+        '<input type="url" class="input-url" placeholder="https://example.com" aria-label="URL">';
+
+      // 値は属性文字列に埋め込まず、プロパティで設定する（" を含むタイトルでも壊れない）
+      const iconBtn=li.querySelector('.edit-icon');
+      setIcon(iconBtn,item);
+      iconBtn.addEventListener('click',()=>showIconModal(item,li));
 
       const titleInput=li.querySelector('.input-title');
+      titleInput.value=item.title||'';
       titleInput.addEventListener('input',()=>{item.title=titleInput.value});
 
       const urlInput=li.querySelector('.input-url');
+      urlInput.value=item.url||'';
       urlInput.addEventListener('input',()=>{
         item.url=urlInput.value;
-        urlInput.classList.remove('invalid');
+        urlInput.classList.remove('invalid')
       });
       urlInput.addEventListener('blur',()=>{
-        if(urlInput.value.trim()){
-          const v=normalizeUrlInput(urlInput.value);
-          urlInput.value=v;
-          item.url=v;
-        }
-        // 自動ファビコン取得は行わない（デフォルトはSVGアイコンのまま）
+        if(!urlInput.value.trim())return;
+        const v=normalizeUrlInput(urlInput.value);
+        urlInput.value=v;
+        item.url=v
       });
       // 複数行のURLをまとめてペーストした場合、1行目は現在の行に、
       // 2行目以降はそれぞれ新しい行として追加する
-      urlInput.addEventListener('paste',(e)=>{
+      urlInput.addEventListener('paste',e=>{
         const text=(e.clipboardData||window.clipboardData).getData('text');
         const lines=text.split(/[\r\n]+/).map(s=>s.trim()).filter(Boolean);
         if(lines.length<=1)return;
@@ -580,24 +575,13 @@
         urlInput.value=firstUrl;
         item.url=firstUrl;
         urlInput.classList.remove('invalid');
-        lines.slice(1).forEach(u=>addEditRow(normalizeUrlInput(u)));
+        lines.slice(1).forEach(u=>addEditRow(normalizeUrlInput(u)))
       });
 
-      // ドラッグハンドルで並び替え（自前のPointer Events実装）
-      const dragHandle=li.querySelector('.drag-handle');
-      attachDragHandle(dragHandle,li);
-
-      // アイコンクリック → SVGアイコンピッカー
-      const iconDiv=li.querySelector('.edit-icon');
-      iconDiv.addEventListener('click',(e)=>{
-        e.stopPropagation();
-        iconTargetItem=item;
-        iconTargetRow=li;
-        showIconModal()
-      });
+      attachDragHandle(li.querySelector('.drag-handle'),li);
 
       li.querySelector('.delete-btn').addEventListener('click',()=>{
-        // indexは行作成時点のものなので、並び替え後もずれないようitemの現在位置を引き直す
+        // 並び替え後も正しい行が消えるよう、itemの現在位置を引き直す
         const i=editModeItems.indexOf(item);
         if(i!==-1)editModeItems.splice(i,1);
         rerenderEditList()
@@ -606,31 +590,11 @@
       editList.appendChild(li)
     }
 
-    function updateEditIconDisplay(li,item){
-      const iconDiv=li.querySelector('.edit-icon');
-      iconDiv.innerHTML=renderIcon(item);
-      iconDiv.addEventListener('click',(e)=>{
-        e.stopPropagation();
-        iconTargetItem=item;
-        iconTargetRow=li;
-        showIconModal()
-      })
-    }
-
     function addEditRow(url){
-      const newItem={
-        id:generateId(),url:url||'',title:'',icon:'link',order:editModeItems.length,
-        createdAt:Date.now(),updatedAt:Date.now()
-      };
-      editModeItems.push(newItem);
-      appendEditRow(newItem,editModeItems.length-1);
-      requestAnimationFrame(()=>{
-        const rows=editList.querySelectorAll('.edit-item');
-        if(rows.length){
-          const input=rows[rows.length-1].querySelector('.input-title');
-          if(input)input.focus()
-        }
-      })
+      const item=createLinkItem(url,editModeItems.length);
+      editModeItems.push(item);
+      appendEditRow(item,0);
+      focusLastTitleInput()
     }
 
     // ===== 並び替え（自前のPointer Events実装） =====
@@ -643,34 +607,31 @@
     const DRAG_EASE='cubic-bezier(0.25,0.46,0.45,0.94)';
 
     function attachDragHandle(handleEl,li){
-      handleEl.addEventListener('pointerdown',(e)=>{
+      handleEl.addEventListener('pointerdown',e=>{
         if(e.pointerType==='mouse'&&e.button!==0)return;
-        const startX=e.clientX,startY=e.clientY;
-
         if(e.pointerType!=='touch'){
           beginDrag(e,li,handleEl);
-          return;
+          return
         }
         // タッチの場合のみ長押し判定を挟み、スクロール操作と区別する
-        let timer=setTimeout(()=>{
+        const startX=e.clientX,startY=e.clientY;
+        const timer=setTimeout(()=>{
           cleanup();
-          beginDrag(e,li,handleEl);
+          beginDrag(e,li,handleEl)
         },DRAG_DELAY_MS);
-        const onMove=(ev)=>{
-          if(Math.abs(ev.clientX-startX)>DRAG_MOVE_TOLERANCE||Math.abs(ev.clientY-startY)>DRAG_MOVE_TOLERANCE){
-            cleanup();
-          }
+        const onMove=ev=>{
+          if(Math.abs(ev.clientX-startX)>DRAG_MOVE_TOLERANCE||Math.abs(ev.clientY-startY)>DRAG_MOVE_TOLERANCE)cleanup()
         };
         const cleanup=()=>{
           clearTimeout(timer);
           handleEl.removeEventListener('pointermove',onMove);
           handleEl.removeEventListener('pointerup',cleanup);
-          handleEl.removeEventListener('pointercancel',cleanup);
+          handleEl.removeEventListener('pointercancel',cleanup)
         };
         handleEl.addEventListener('pointermove',onMove);
         handleEl.addEventListener('pointerup',cleanup);
-        handleEl.addEventListener('pointercancel',cleanup);
-      });
+        handleEl.addEventListener('pointercancel',cleanup)
+      })
     }
 
     function beginDrag(startEvent,li,handleEl){
@@ -683,12 +644,15 @@
       const startClientY=startEvent.clientY;
       const startScrollTop=editMode.scrollTop;
       let currentIndex=draggedIndex;
-      let lastClientY=startClientY;
       let pendingClientY=startClientY;
       let dragActive=true;
       let rafId=null;
 
       try{handleEl.setPointerCapture(pointerId)}catch(err){}
+
+      // フェードインが再生中だと、そのアニメーションが transform を上書きして
+      // 追従できなくなるため、ドラッグ中は全行のアニメーションを止める
+      allRows.forEach(row=>{row.style.animation='none'});
 
       li.classList.add('dragging');
       // ドラッグ中はtransitionを一切使わない。指の動きに追従させるにはtransformを
@@ -697,6 +661,7 @@
       li.style.transition='none';
       li.style.transform='translateY(0px) scale(1.03)';
 
+      // ドラッグ中の行以外を、目標スロット newIndex に合わせて1行分ずらし「場所を空ける」
       function applyShifts(newIndex){
         allRows.forEach((row,i)=>{
           if(row===li)return;
@@ -704,42 +669,46 @@
           if(newIndex>draggedIndex&&i>draggedIndex&&i<=newIndex)shift=-1;
           else if(newIndex<draggedIndex&&i>=newIndex&&i<draggedIndex)shift=1;
           row.style.transition='transform .2s '+DRAG_EASE;
-          row.style.transform=shift?('translateY('+(shift*rowHeight)+'px)'):'';
-        });
+          row.style.transform=shift?('translateY('+(shift*rowHeight)+'px)'):''
+        })
       }
 
       // pointermoveは最新の指の位置を記録するだけに留め、実際のtransform反映は
       // 描画フレームごとに1回（rAFループ側）で行う。こうすることで、イベント発火
       // 頻度と描画頻度を切り離し、iOS Safariでも取りこぼしなく追従させる。
-      function applyFrame(){
-        if(!dragActive)return;
-        lastClientY=pendingClientY;
+      // 指の位置とスクロール量から、ドラッグ中の行の表示オフセットと目標スロットを更新する
+      function updatePosition(clientY){
         const scrollDelta=editMode.scrollTop-startScrollTop;
-        const dy=(pendingClientY-startClientY)+scrollDelta;
+        const dy=(clientY-startClientY)+scrollDelta;
         li.style.transform='translateY('+dy+'px) scale(1.03)';
         const slotsMoved=Math.round(dy/rowHeight);
         const newIndex=Math.max(0,Math.min(allRows.length-1,draggedIndex+slotsMoved));
         if(newIndex!==currentIndex){
           currentIndex=newIndex;
-          applyShifts(currentIndex);
+          applyShifts(currentIndex)
         }
+      }
 
+      function applyFrame(){
+        if(!dragActive)return;
+        const clientY=pendingClientY;
+        updatePosition(clientY);
+
+        // リストの上下端に近づいたら自動スクロール
         const rect=editMode.getBoundingClientRect();
         let sdy=0;
-        if(lastClientY<rect.top+DRAG_SCROLL_EDGE)sdy=-Math.ceil((rect.top+DRAG_SCROLL_EDGE-lastClientY)/4);
-        else if(lastClientY>rect.bottom-DRAG_SCROLL_EDGE)sdy=Math.ceil((lastClientY-(rect.bottom-DRAG_SCROLL_EDGE))/4);
+        if(clientY<rect.top+DRAG_SCROLL_EDGE)sdy=-Math.ceil((rect.top+DRAG_SCROLL_EDGE-clientY)/4);
+        else if(clientY>rect.bottom-DRAG_SCROLL_EDGE)sdy=Math.ceil((clientY-(rect.bottom-DRAG_SCROLL_EDGE))/4);
         if(sdy!==0)editMode.scrollTop+=sdy;
 
-        rafId=requestAnimationFrame(applyFrame);
+        rafId=requestAnimationFrame(applyFrame)
       }
 
       function onMove(ev){
-        if(ev.pointerId!==pointerId)return;
-        pendingClientY=ev.clientY;
+        if(ev.pointerId===pointerId)pendingClientY=ev.clientY
       }
       function onUp(ev){
-        if(ev.pointerId!==pointerId)return;
-        endDrag();
+        if(ev.pointerId===pointerId)endDrag()
       }
       function endDrag(){
         dragActive=false;
@@ -748,6 +717,8 @@
         handleEl.removeEventListener('pointercancel',onUp);
         if(rafId)cancelAnimationFrame(rafId);
         try{handleEl.releasePointerCapture(pointerId)}catch(err){}
+        // 最後の pointermove がまだフレームに反映されていない場合に備えて確定させる
+        updatePosition(pendingClientY);
 
         const newIndex=currentIndex;
         const beforeRect=li.getBoundingClientRect();
@@ -765,72 +736,73 @@
           editModeItems.splice(newIndex,0,moved);
           editModeItems.forEach((it,i)=>it.order=i);
           const remaining=[...editList.children].filter(r=>r!==li);
-          editList.insertBefore(li,remaining[newIndex]||null);
+          editList.insertBefore(li,remaining[newIndex]||null)
         }
 
         // FLIP: DOM上の位置確定後、直前の見た目位置から滑らかに着地させる。
         // 「浮いた」見た目（影・背景）はスナップ演出が終わるまで保持する
         const afterRect=li.getBoundingClientRect();
         const deltaY=beforeRect.top-afterRect.top;
-        if(deltaY){
-          li.style.transform='translateY('+deltaY+'px) scale(1.03)';
-          requestAnimationFrame(()=>{
-            li.style.transition='transform .25s '+DRAG_EASE;
-            li.style.transform='';
-            setTimeout(()=>{
-              li.classList.remove('dragging');
-              li.style.transition=''
-            },250);
-          });
-        }else{
+        if(!deltaY){
           li.classList.remove('dragging');
+          return
         }
+        li.style.transform='translateY('+deltaY+'px) scale(1.03)';
+        requestAnimationFrame(()=>{
+          li.style.transition='transform .25s '+DRAG_EASE;
+          li.style.transform='';
+          setTimeout(()=>{
+            li.classList.remove('dragging');
+            li.style.transition=''
+          },250)
+        })
       }
 
       handleEl.addEventListener('pointermove',onMove);
       handleEl.addEventListener('pointerup',onUp);
       handleEl.addEventListener('pointercancel',onUp);
-      rafId=requestAnimationFrame(applyFrame);
+      rafId=requestAnimationFrame(applyFrame)
     }
 
     // ===== SVGアイコンピッカー =====
-    function showIconModal(){
-      iconGrid.innerHTML='';
+    let iconTarget=null; // {item,row} ピッカーで変更対象の行
+
+    function buildIconGrid(){
       ICON_NAMES.forEach(name=>{
         const btn=document.createElement('button');
+        btn.type='button';
         btn.className='icon-option';
         btn.innerHTML=SVG_ICONS[name];
         btn.setAttribute('aria-label','Select '+name+' icon');
-        btn.dataset.iconName=name;
-        if(iconTargetItem && iconTargetItem.icon===name){
-          btn.classList.add('selected')
-        }
-        btn.addEventListener('click',()=>{
-          if(iconTargetItem){
-            iconTargetItem.icon=name;
-            if(iconTargetRow){
-              updateEditIconDisplay(iconTargetRow,iconTargetItem)
-            }
-          }
-          hideIconModal()
-        });
+        btn.addEventListener('click',()=>selectIcon(name));
         iconGrid.appendChild(btn)
-      });
+      })
+    }
+    function showIconModal(item,row){
+      iconTarget={item,row};
+      [...iconGrid.children].forEach((btn,i)=>btn.classList.toggle('selected',ICON_NAMES[i]===item.icon));
       iconModal.style.display='flex'
+    }
+    function selectIcon(name){
+      if(iconTarget){
+        iconTarget.item.icon=name;
+        setIcon(iconTarget.row.querySelector('.edit-icon'),iconTarget.item)
+      }
+      hideIconModal()
     }
     function hideIconModal(){
       iconModal.style.display='none';
-      iconTargetItem=null;
-      iconTargetRow=null
+      iconTarget=null
     }
+    buildIconGrid();
     iconClose.addEventListener('click',hideIconModal);
-    iconModal.addEventListener('click',e=>{
-      if(e.target===iconModal)hideIconModal()
+    iconModal.addEventListener('click',e=>{if(e.target===iconModal)hideIconModal()});
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Escape'&&iconModal.style.display!=='none')hideIconModal()
     });
 
     // ===== モード切替 =====
     function showNormalMode(){
-      isEditMode=false;
       normalMode.classList.add('active');
       editMode.classList.remove('active');
       normalHeader.style.display='flex';
@@ -838,68 +810,109 @@
       renderNormalMode()
     }
     function showEditMode(){
-      isEditMode=true;
       normalMode.classList.remove('active');
       editMode.classList.add('active');
       normalHeader.style.display='none';
       editHeader.style.display='flex';
       renderEditMode()
     }
-    async function saveAll(){
-      // URLが入力されているのに無効な行はサイレントに捨てず、エラー表示して保存を中断する
-      const invalidItems=editModeItems.filter(it=>it.url.trim()!==''&&!isValidUrl(it.url));
-      editList.querySelectorAll('.input-url.invalid').forEach(el=>el.classList.remove('invalid'));
-      if(invalidItems.length){
-        let firstInput=null;
-        invalidItems.forEach(it=>{
-          const li=editList.querySelector('.edit-item[data-id="'+it.id+'"]');
-          const input=li&&li.querySelector('.input-url');
-          if(input){
-            input.classList.add('invalid');
-            if(!firstInput)firstInput=input;
-          }
-        });
-        if(firstInput){
-          firstInput.scrollIntoView({block:'center',behavior:'smooth'});
-          firstInput.focus();
-        }
-        return;
+
+    // 該当行のURL欄を赤枠にし、最初の1件へスクロール＆フォーカスする
+    function markInvalid(items){
+      let first=null;
+      items.forEach(it=>{
+        const input=urlInputFor(it.id);
+        if(!input)return;
+        input.classList.add('invalid');
+        if(!first)first=input
+      });
+      if(first){
+        first.scrollIntoView({block:'center',behavior:'smooth'});
+        first.focus()
       }
-      const validItems=editModeItems.filter(it=>isValidUrl(it.url));
+    }
+
+    async function saveAll(){
+      if(isSaving)return;
+      // 入力欄のblurを経ずにSaveされた場合に備え、ここでも正規化して表示にも反映する
+      editModeItems.forEach(it=>{
+        it.url=normalizeUrlInput(it.url);
+        const input=urlInputFor(it.id);
+        if(input&&input.value!==it.url)input.value=it.url
+      });
+      editList.querySelectorAll('.input-url.invalid').forEach(el=>el.classList.remove('invalid'));
+
+      // URLが入力されているのに無効な行・重複する行はサイレントに捨てず、
+      // 赤枠表示して保存を中断する（空欄の行だけは黙って捨てる）
+      const seen=new Set();
+      const invalidItems=editModeItems.filter(it=>{
+        if(it.url==='')return false;
+        if(!isValidUrl(it.url)||seen.has(it.url))return true;
+        seen.add(it.url);
+        return false
+      });
+      if(invalidItems.length){
+        markInvalid(invalidItems);
+        return
+      }
+
+      const original=new Map(links.map(l=>[l.id,l]));
+      const now=Date.now();
+      const validItems=editModeItems.filter(it=>it.url!=='');
       validItems.forEach((it,i)=>{
         it.order=i;
-        it.updatedAt=Date.now();
         if(!it.title.trim())it.title=defaultTitleFromUrl(it.url);
+        const prev=original.get(it.id);
+        const changed=!prev||prev.url!==it.url||prev.title!==it.title||prev.icon!==it.icon||prev.order!==it.order;
+        if(changed)it.updatedAt=now
       });
-      const ids=new Set(validItems.map(i=>i.id));
-      for(const l of links){if(!ids.has(l.id))await deleteLink(l.id)}
-      for(const it of validItems)await saveLink(it);
-      links=validItems;
-      showNormalMode()
+
+      isSaving=true;
+      saveBtn.disabled=true;
+      try{
+        await replaceAllLinks(validItems);
+        links=validItems;
+        showNormalMode()
+      }catch(err){
+        console.error('Failed to save links',err);
+        alert('Failed to save. Please try again.')
+      }finally{
+        isSaving=false;
+        saveBtn.disabled=false
+      }
     }
 
     // ===== イベント登録 =====
-    editBtn.addEventListener('click',()=>showEditMode());
-    cancelBtn.addEventListener('click',()=>showNormalMode());
-    saveBtn.addEventListener('click',()=>saveAll());
+    editBtn.addEventListener('click',showEditMode);
+    cancelBtn.addEventListener('click',showNormalMode);
+    saveBtn.addEventListener('click',saveAll);
     addBtn.addEventListener('click',()=>addEditRow());
 
     // ===== ズーム防止 =====
     document.addEventListener('gesturestart',e=>e.preventDefault());
     document.addEventListener('dblclick',e=>e.preventDefault());
 
+    // ===== Service Worker =====
+    // DBの初期化を待ってから load イベントに登録すると、load が先に発火していた場合に
+    // 登録されないことがあるため、readyState を見て即時 or load時 のどちらかで登録する
+    function registerServiceWorker(){
+      if(!('serviceWorker' in navigator))return;
+      const register=()=>navigator.serviceWorker.register('service-worker.js')
+        .catch(err=>console.warn('Service Worker registration failed',err));
+      if(document.readyState==='complete')register();
+      else window.addEventListener('load',register,{once:true})
+    }
+
     // ===== 初期化 =====
     (async()=>{
-      await openDB();
-      links=await getAllLinks();
-      renderNormalMode();
-      if('serviceWorker' in navigator){
-        window.addEventListener('load',()=>{
-          navigator.serviceWorker.register('service-worker.js')
-            .then(()=>console.log('SW registered'))
-            .catch(e=>console.log('SW failed',e))
-        })
+      try{
+        await openDB();
+        links=await getAllLinks()
+      }catch(err){
+        console.error('Failed to open IndexedDB',err)
       }
+      renderNormalMode();
+      registerServiceWorker()
     })();
   </script>
 </body>
