@@ -29,7 +29,7 @@ flowchart LR
         MANIFEST["manifest.json"]
         IDB[("IndexedDB<br/>link-launcher")]
         SW["Service Worker<br/>service-worker.js<br/>（fetchを中継）"]
-        CACHE[("Cache Storage<br/>CACHE_NAME=v5")]
+        CACHE[("Cache Storage<br/>CACHE_NAME")]
     end
 
     APP -- "&lt;link rel=manifest&gt;" --> MANIFEST
@@ -54,31 +54,31 @@ flowchart TD
 
     B["② 通常モード<br/>renderNormalMode()"] -- "Editタップ" --> C
 
-    C["③ 編集モード<br/>showEditMode()<br/>追加・削除・並び替え・貼り付けのたびre-render"]
-    C -- "Cancel（編集を破棄）" --> B
-    C -- "Saveタップ" --> D{"URLが有効?"}
+    C["③ 編集モード<br/>showEditMode()<br/>追加・削除・並び替え・貼り付け・Import"]
+    C -- "Cancel（未保存なら確認して破棄）" --> B
+    C -- "Saveタップ" --> D{"URLが有効で<br/>重複なし?"}
 
     D -- "No" --> E["該当URL欄を赤枠表示<br/>保存を中断（編集モードのまま）"]
     E --> C
 
     D -- "Yes" --> F["Titleが空欄なら<br/>ホスト名を補完<br/>defaultTitleFromUrl()"]
-    F --> G["IndexedDBへ反映<br/>差分だけ put / delete"]
+    F --> G["IndexedDBへ反映<br/>replaceAllLinks()<br/>（clear→全件put）"]
     G -- "renderNormalMode()" --> B
 ```
 
-編集モードに入ると `links` 配列を丸ごとコピーして `editModeItems` を作ります（`editModeItems=links.map(l=>({...l}))`）。編集中の操作はすべてこのコピーの上で行われるため、**Cancelを押せば何も保存せずに元へ戻せます**。Saveが押されたときだけ、`editModeItems` と元の `links` を比較して差分だけIndexedDBに反映します。
+編集モードに入ると `links` 配列を丸ごとコピーして `editModeItems` を作ります（`editModeItems=links.map(l=>({...l}))`）。編集中の操作はすべてこのコピーの上で行われるため、**Cancelを押せば何も保存せずに元へ戻せます**（未保存の変更がある場合は `hasUnsavedChanges()` で検知して確認ダイアログを出します）。Saveが押されたときだけ、`editModeItems` を検証してIndexedDBに反映します。
 
 ```js
 // index.html — 初期化処理（アプリ起動時に一度だけ実行される）
 (async()=>{
-  await openDB();
-  links=await getAllLinks();
-  renderNormalMode();
-  if('serviceWorker' in navigator){
-    window.addEventListener('load',()=>{
-      navigator.serviceWorker.register('service-worker.js')
-    })
+  try{
+    await openDB();
+    links=await getAllLinks()
+  }catch(err){
+    console.error('Failed to open IndexedDB',err)
   }
+  renderNormalMode();
+  registerServiceWorker()   // load済みなら即時、まだなら load 時に register()
 })();
 ```
 
@@ -119,7 +119,7 @@ Service Workerは「install → activate → fetch」という3つのイベン�
 
 ```js
 // service-worker.js
-const CACHE_NAME = 'link-launcher-v5';
+const CACHE_NAME = 'link-launcher-v6';
 const STATIC_ASSETS = ['./', './index.html', './manifest.json'];
 
 // ① install: 初回登録時。オフラインで使うファイルを先読みキャッシュ
@@ -140,19 +140,32 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// ③ fetch: すべての通信をこの関数が「横取り」できる
+// ネットワークから取得できたら、次回のオフライン起動に備えてキャッシュも更新する
+async function fetchAndCache(request, init) {
+  const response = await fetch(request, init);
+  if (response.ok) {
+    const cache = await caches.open(CACHE_NAME);
+    cache.put(request, response.clone()).catch(() => {});
+  }
+  return response;
+}
+
+// ③ fetch: 同一オリジンのGET通信をこの関数が「横取り」する
 self.addEventListener('fetch', (event) => {
-  if (event.request.mode === 'navigate') {
-    // ページ遷移はまずネットワークを試し、失敗したらキャッシュのindex.htmlを返す
-    event.respondWith(fetch(event.request).catch(() => caches.match('./index.html')));
+  const { request } = event;
+  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+
+  if (request.mode === 'navigate') {
+    // ページ本体はネットワーク優先（HTTPキャッシュも再検証）。失敗したらキャッシュのindex.htmlを返す
+    event.respondWith(fetchAndCache(request, { cache: 'no-cache' }).catch(() => caches.match('./index.html')));
     return;
   }
-  // それ以外（CSS/JS/画像など）はキャッシュ優先、無ければネットワーク
-  event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request)));
+  // それ以外（manifest等）はキャッシュ優先、無ければ取得してキャッシュに追加
+  event.respondWith(caches.match(request).then((cached) => cached || fetchAndCache(request)));
 });
 ```
 
-> **キャッシュ更新のお作法：** `index.html` を書き換えたら `CACHE_NAME` の末尾（v4→v5など）を必ず上げること。同じ名前のままだと、古いキャッシュがヒットし続けてユーザーに新しい内容が届かない。
+> **キャッシュ更新のお作法：** ファイルを書き換えたら `CACHE_NAME` の末尾（v6→v7など）を上げること。ページ本体（`index.html`）はネットワーク優先なのでオンラインなら更新が届くが、オフライン用のキャッシュと `manifest.json` はこの名前で世代管理しているため、古い世代を確実に捨てるには名前を変える必要がある。
 
 ---
 
@@ -163,10 +176,11 @@ links の実装には、iOS Safari特有の癖に対応するためだけに存�
 | 制約 | 内容 | 対応コード |
 |---|---|---|
 | DnD非対応 | iOS SafariはHTML標準のDrag&Drop APIをタッチ操作向けにきちんとサポートしていない | `pointerdown/pointermove/pointerup` を自前で処理する実装（`attachDragHandle`）に置き換え |
+| キーボード | URL入力時に先頭が自動で大文字になったり、自動修正で書き換えられたりする | URL欄に `inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false"`、`enterkeyhint` で「次へ」「完了」を出す |
 | ズーム | 意図しない拡大・縮小が起きやすい | `user-scalable=no` + `gesturestart`/`dblclick` を `preventDefault()` |
 | ノッチ | セーフエリアに要素が被る | `env(safe-area-inset-top/bottom)` を `--safe-top`/`--safe-bottom` に取り込む |
 | アプリ連携 | アプリスキーム（`googlesheets://`等）が開けたかJSから検知できない | 遷移後1.5秒待ち、`document.visibilityState==='visible'` ならブラウザで開き直すフォールバック |
-| ストレージ | 7日間PWAを起動しないと、SafariがIndexedDBとCacheを消す可能性がある | ホーム画面に追加したPWAは比較的安全（README記載の既知の制約） |
+| ストレージ | 7日間PWAを起動しないと、SafariがIndexedDBとCacheを消す可能性がある | ホーム画面に追加したPWAは比較的安全。念のため編集モードの **Export**（`navigator.share` で共有シートへ）で手動バックアップできる |
 | タップ感触 | 長押しメニューやハイライトがネイティブアプリらしくない | `-webkit-tap-highlight-color:transparent` / `-webkit-touch-callout:none` / `touch-action:manipulation` |
 
 ```js
@@ -177,13 +191,13 @@ document.addEventListener('dblclick', e => e.preventDefault());
 
 ```js
 // アプリスキームのフォールバック（index.html openLink()）
-const appUrl = url.replace('https://', 'googlesheets://');
-window.location.href = appUrl;
+const app = GOOGLE_APP_SCHEMES.find(a => url.includes(a.path)); // 例: googlesheets://
+window.location.href = url.replace(/^https?:\/\//, app.scheme);
 setTimeout(() => {
   if (document.visibilityState === 'visible') {
     window.open(url, '_blank', 'noopener')
   }
-}, 1500);
+}, APP_SCHEME_FALLBACK_MS); // 1500ms
 ```
 
 ---
@@ -235,18 +249,22 @@ function openDB(){
 ### コールバックAPIをPromiseでラップするパターン
 
 ```js
-function saveLink(link){
+function replaceAllLinks(items){
   return new Promise((res,rej)=>{
     const tx=db.transaction(STORE_NAME,'readwrite');
     const st=tx.objectStore(STORE_NAME);
-    st.put(link);                 // id が既存なら上書き、無ければ新規
+    st.clear();                   // いったん全消去して…
+    items.forEach(it=>st.put(it)); // …編集後の全件を入れ直す（同じトランザクション内）
     tx.oncomplete=()=>res();      // トランザクション全体の完了を待つ
-    tx.onerror=()=>rej(tx.error)
+    tx.onerror=()=>rej(tx.error);
+    tx.onabort=()=>rej(tx.error)
   })
 }
 ```
 
-この形（`new Promise` で包み、`onsuccess`/`oncomplete` で `resolve`、`onerror` で `reject`）は `openDB` / `getAllLinks` / `saveLink` / `deleteLink` の4関数すべてで繰り返し使われています。一度読めば残りは同じパターンです。
+この形（`new Promise` で包み、`onsuccess`/`oncomplete` で `resolve`、`onerror` で `reject`）は `openDB` / `getAllLinks` / `replaceAllLinks` の3関数すべてで繰り返し使われています。一度読めば残りは同じパターンです。
+
+保存が「差分のput/delete」ではなく「clear→全件put」なのは、`url` の一意インデックスとの相性のためです。たとえば2件のURLを入れ替えると、差分方式では先にputした方が既存のURLと衝突して `ConstraintError` になります。1トランザクションで clear→put すれば途中で失敗しても丸ごとロールバックされ、データが壊れることもありません。
 
 ---
 
@@ -259,7 +277,7 @@ links 全体で繰り返し登場する書き方をまとめました。知っ�
 | アロー関数 + 即時実行 | `(async()=>{ await openDB(); })();` | ページ読み込み直後に一度だけ実行したい初期化処理を、名前を付けずにその場で実行する定番パターン |
 | 省略形catch | `try{ return new URL(s); }catch{ return false }` | ES2019以降、`catch(e)`の変数を使わないなら丸ごと省略できる。`isValidUrl()`で多用 |
 | オブジェクトのコピー | `editModeItems = links.map(l => ({...l}));` | スプレッド構文で「浅いコピー」を作る。元の配列を書き換えずに編集用コピーを作る |
-| 文字列連結でHTML生成 | `li.innerHTML = '<span>'+escapeHtml(title)+'</span>';` | テンプレートリテラルではなく`+`連結。ユーザー入力は必ず`escapeHtml()`を通してからXSSを防ぐ |
+| 文字列連結でHTML生成 | `li.innerHTML = '<div class="link-icon"></div><span class="link-title"></span>';` | 骨組みだけ`+`連結で作り、ユーザー入力（タイトル・URL）は `textContent` / `.value` プロパティで後から流し込む。属性文字列に埋め込まないので `"` を含む値でも壊れず、XSSにもならない |
 | 配列の破壊的操作 | `const [moved]=arr.splice(from,1); arr.splice(to,0,moved);` | `splice`で「取り出して」「差し込む」。並び替えロジックの中心 |
 | requestAnimationFrame | `requestAnimationFrame(()=>{ input.focus() });` | DOM追加直後は描画が確定していないことがあるため、次の描画フレームまで待ってから操作する |
 
@@ -267,10 +285,15 @@ links 全体で繰り返し登場する書き方をまとめました。知っ�
 
 | 関数 | 役割 |
 |---|---|
-| `escapeHtml(s)` | 文字列をHTMLエスケープ。`innerHTML`に差し込む前に必須 |
+| `setIcon(container, link)` | `link.icon` に応じて内蔵SVG／画像／既定アイコンを `container` に描画する |
 | `isValidUrl(s)` | `new URL()`が例外を投げないかでURLの妥当性を判定 |
+| `normalizeUrlInput(s)` | 前後の空白を除き、`http(s)://` が無ければ `https://` を補う |
 | `haptic()` | `navigator.vibrate(10)`で短い振動フィードバック |
 | `generateId()` | タイムスタンプ+乱数文字列でID採番（衝突をほぼ無視できる簡易実装） |
+
+### アニメーションと transform の落とし穴
+
+`.link-item` / `.edit-item` はフェードイン（`fadeInUp`）で現れますが、`animation-fill-mode` は **`backwards`** にしてあります。`both` や `forwards` にすると、アニメーション終了後も `to` の `transform: translateY(0)` が「アニメーション由来の値」として残り続け、`:active` の縮小やドラッグ中にJSで設定するインラインの `transform` を上書きしてしまいます（CSSのカスケードではアニメーションの値がインラインスタイルより優先されるため）。同じ理由で、`beginDrag()` では全行の `animation` を `none` にしてからドラッグを始めます。
 
 ---
 
